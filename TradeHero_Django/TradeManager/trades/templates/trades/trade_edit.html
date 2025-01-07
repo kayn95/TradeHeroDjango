@@ -1,0 +1,54 @@
+{% extends 'trades/base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Modifier le Trade
+    {% else %}
+        Nouveau Trade
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<h2>
+    {% if form.instance.pk %}
+        Modifier le Trade
+    {% else %}
+        Nouveau Trade
+    {% endif %}
+</h2>
+
+<!-- Affichage des messages d'erreur -->
+{% if form.errors %}
+    <div class="alert alert-danger">
+        <strong>Veuillez corriger les erreurs ci-dessous :</strong>
+        {{ form.errors }}
+    </div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <!-- Champ pour les screenshots -->
+    <div class="form-group">
+        <label for="id_screenshots">Ajouter des captures d'écran :</label>
+        <small class="text-muted">
+            Maintenez Ctrl (Windows) ou Command (Mac) pour sélectionner plusieurs fichiers.
+        </small>
+        <input type="file" name="screenshots" id="id_screenshots" multiple>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="{% url 'trade_list' %}" class="btn btn-secondary">Annuler</a>
+</form>
+
+<!-- Affichage des captures d'écran existantes -->
+{% if trade.screenshots.all %}
+    <h3 class="mt-5">Captures d'écran existantes</h3>
+    <div class="row">
+        {% for screenshot in trade.screenshots.all %}
+            <div class="col-md-3 mb-3">
+                <img src="{{ screenshot.image.url }}" alt="Screenshot" class="img-thumbnail">
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'trades/base.html' %}
+{% block title %}Détails du Trade{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Détails du Trade</h2>
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>Stratégie :</strong>
+            {% if trade.strategy %}
+                <a href="{% url 'strategy_detail' trade.strategy.pk %}" class="text-decoration-none">
+                    {{ trade.strategy.name }}
+                    <i class="fas fa-external-link-alt"></i>
+                </a>
+            {% else %}
+                <span class="text-muted">Aucune Stratégie Associée</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <p><strong>Date d'entrée :</strong> {{ trade.entry_datetime|date:"d/m/Y H:i" }}</p>
+            <p><strong>Date de sortie :</strong> {{ trade.exit_datetime|date:"d/m/Y H:i" }}</p>
+            <p><strong>Prix d'entrée :</strong> {{ trade.entry_price|floatformat:"2" }}</p>
+            <p><strong>Prix de sortie :</strong> {{ trade.exit_price|floatformat:"2" }}</p>
+            <p><strong>Notes :</strong> {{ trade.note|truncatewords:10 }}</p>
+            <p><strong>Captures d'écran :</strong></p>
+            {% if trade.screenshots.all %}
+                <div class="row">
+                    {% for screenshot in trade.screenshots.all %}
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ screenshot.image.url }}" 
+                               data-toggle="lightbox" 
+                               data-gallery="trade-gallery{{ trade.pk }}">
+                                <img src="{{ screenshot.image.url }}" alt="Screenshot" class="img-thumbnail">
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>Aucune capture d'écran disponible.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Boutons d’actions : Modifier / Supprimer
+         seulement si can_edit_delete est True -->
+    {% if can_edit_delete %}
+        <a href="{% url 'trade_edit' trade.pk %}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Modifier
+        </a>
+        <a href="{% url 'trade_delete' trade.pk %}" class="btn btn-danger">
+            <i class="fas fa-trash-alt"></i> Supprimer
+        </a>
+    {% endif %}
+
+    <!-- Bouton de retour : si student_id est None,
+         c'est l'élève (ou superuser) => bouton vers trade_list
+         sinon, c’est un coach => bouton vers coach_student_trades -->
+    {% if student_id %}
+        <a href="{% url 'coach_student_trades' student_id %}" class="btn btn-info ml-2">
+            <i class="fas fa-users"></i> Retour aux trades de l'élève
+        </a>
+    {% else %}
+        <a href="{% url 'trade_list' %}" class="btn btn-secondary ml-2">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    {% endif %}
+</div>
+{% endblock %}
