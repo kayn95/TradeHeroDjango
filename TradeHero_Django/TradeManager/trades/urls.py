@@ -18,6 +18,7 @@ urlpatterns = [
     path('strategy/new/', views.strategy_new, name='strategy_new'),
     path('strategy/<int:pk>/edit/', views.strategy_edit, name='strategy_edit'),
     path('strategy/<int:pk>/delete/', views.strategy_delete, name='strategy_delete'),
+    path('stats/', views.stats_view, name='stats_view'),
     # Auth URLs
     path('register/', views.register, name='register'),
     path('login/', views.user_login, name='login'),

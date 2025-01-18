@@ -4,6 +4,7 @@
 import csv
 import io
 from datetime import datetime, timedelta
+import json
 
 # --- Bibliothèques Django (tierces) ---
 from django.shortcuts import render, get_object_or_404, redirect
@@ -15,6 +16,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.db.models import Sum
 
 # --- Importations locales ---
 from .forms import (
@@ -870,3 +872,69 @@ def add_trade_comment(request):
         'status': 'success',
         'message': 'Commentaire ajouté avec succès.'
     })
+
+@login_required
+def stats_view(request):
+    # 1) Récupérer toutes les stratégies de l’utilisateur
+    strategies = Strategy.objects.filter(user=request.user)
+
+    # 2) Lire la stratégie choisie depuis la requête GET
+    strategy_id = request.GET.get('strategy_id')
+
+    # Variables pour le contexte
+    selected_strategy = None
+    trades = None
+    chart_data = None
+    total_profit = 0
+    nb_trades = 0
+    win_rate = 0
+
+    if strategy_id:
+        # Vérifier que la stratégie existe et appartient à l’utilisateur
+        selected_strategy = get_object_or_404(Strategy, pk=strategy_id, user=request.user)
+
+        # Récupérer tous les trades de cette stratégie
+        trades = Trade.objects.filter(strategy=selected_strategy)
+
+        nb_trades = trades.count()
+        # Somme de profit_loss
+        total_profit = sum(t.profit_loss for t in trades)
+
+        # Calcul du taux de réussite
+        nb_winning = trades.filter(profit_loss__gt=0).count()
+        if nb_trades > 0:
+            win_rate = (nb_winning / nb_trades) * 100
+
+        # Préparer les données pour un graphique
+        # Exemple : On veut tracer un "Line Chart" (ou bar) avec la date d’entrée et profit
+        # On construit 2 listes x et y
+        x_values = []
+        y_values = []
+
+        # On peut ordonner par date pour un tracé plus cohérent
+        trades_ordered = trades.order_by('entry_datetime')
+        for trade in trades_ordered:
+            # On stocke la date sous forme de chaîne (ou timestamp)
+            date_str = ""
+            if trade.entry_datetime:
+                date_str = trade.entry_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            x_values.append(date_str)
+            y_values.append(float(trade.profit_loss))
+
+        # chart_data sera un dict qui contiendra x et y
+        # qu’on passera ensuite au template
+        chart_data = {
+            'x': x_values,
+            'y': y_values
+        }
+
+    # Contexte à passer au template
+    context = {
+        'strategies': strategies,
+        'selected_strategy': selected_strategy,
+        'total_profit': total_profit,
+        'nb_trades': nb_trades,
+        'win_rate': win_rate,
+        'chart_data': json.dumps(chart_data) if chart_data else None
+    }
+    return render(request, 'trades/stats.html', context)
