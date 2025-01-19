@@ -913,20 +913,26 @@ def stats_view(request):
 
         # On peut ordonner par date pour un tracé plus cohérent
         trades_ordered = trades.order_by('entry_datetime')
-        for trade in trades_ordered:
-            # On stocke la date sous forme de chaîne (ou timestamp)
-            date_str = ""
-            if trade.entry_datetime:
-                date_str = trade.entry_datetime.strftime('%Y-%m-%d %H:%M:%S')
-            x_values.append(date_str)
-            y_values.append(float(trade.profit_loss))
 
-        # chart_data sera un dict qui contiendra x et y
-        # qu’on passera ensuite au template
+        cumulative = 0
+        x_values = []
+        y_values = []
+
+        for trade in trades_ordered:
+            # On incrémente le cumul
+            cumulative += float(trade.profit_loss)
+
+            # On convertit la date en string pour l’axe X
+            date_str = trade.entry_datetime.strftime('%Y-%m-%d %H:%M:%S') if trade.entry_datetime else ''
+            
+            x_values.append(date_str)
+            y_values.append(cumulative)
+
         chart_data = {
             'x': x_values,
             'y': y_values
         }
+
 
     # Contexte à passer au template
     context = {
