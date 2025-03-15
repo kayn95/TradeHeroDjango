@@ -873,74 +873,69 @@ def add_trade_comment(request):
         'message': 'Commentaire ajouté avec succès.'
     })
 
+
 @login_required
 def stats_view(request):
-    # 1) Récupérer toutes les stratégies de l’utilisateur
+    # Récupérer toutes les stratégies de l'utilisateur connecté
     strategies = Strategy.objects.filter(user=request.user)
 
-    # 2) Lire la stratégie choisie depuis la requête GET
+    # Récupérer l'ID de la stratégie sélectionnée (via GET)
     strategy_id = request.GET.get('strategy_id')
 
-    # Variables pour le contexte
+    # Initialisation des variables pour le contexte
     selected_strategy = None
     trades = None
-    chart_data = None
     total_profit = 0
     nb_trades = 0
     win_rate = 0
+    average_profit = 0
+    average_gain_percent = 0
+    chart_data = None
 
     if strategy_id:
-        # Vérifier que la stratégie existe et appartient à l’utilisateur
+        # Vérifier que la stratégie appartient à l'utilisateur
         selected_strategy = get_object_or_404(Strategy, pk=strategy_id, user=request.user)
-
-        # Récupérer tous les trades de cette stratégie
-        trades = Trade.objects.filter(strategy=selected_strategy)
-
+        # Récupérer les trades de cette stratégie en ordre chronologique
+        trades = Trade.objects.filter(strategy=selected_strategy).order_by('entry_datetime')
         nb_trades = trades.count()
-        # Somme de profit_loss
-        total_profit = sum(t.profit_loss for t in trades)
+        total_profit = sum(float(trade.profit_loss) for trade in trades)
+        win_trades = trades.filter(profit_loss__gt=0).count()
+        win_rate = (win_trades / nb_trades * 100) if nb_trades > 0 else 0
+        average_profit = total_profit / nb_trades if nb_trades > 0 else 0
 
-        # Calcul du taux de réussite
-        nb_winning = trades.filter(profit_loss__gt=0).count()
-        if nb_trades > 0:
-            win_rate = (nb_winning / nb_trades) * 100
+        # Calcul du pourcentage moyen de gain par trade
+        percentages = []
+        for trade in trades:
+            if trade.entry_price and trade.exit_price and float(trade.entry_price) != 0:
+                gain_percent = ((float(trade.exit_price) - float(trade.entry_price)) / float(trade.entry_price)) * 100
+                percentages.append(gain_percent)
+        if percentages:
+            average_gain_percent = sum(percentages) / len(percentages)
+        else:
+            average_gain_percent = 0
 
-        # Préparer les données pour un graphique
-        # Exemple : On veut tracer un "Line Chart" (ou bar) avec la date d’entrée et profit
-        # On construit 2 listes x et y
-        x_values = []
-        y_values = []
-
-        # On peut ordonner par date pour un tracé plus cohérent
-        trades_ordered = trades.order_by('entry_datetime')
-
+        # Calcul du profit cumulatif dans le temps
         cumulative = 0
         x_values = []
         y_values = []
-
-        for trade in trades_ordered:
-            # On incrémente le cumul
+        for trade in trades:
             cumulative += float(trade.profit_loss)
-
-            # On convertit la date en string pour l’axe X
-            date_str = trade.entry_datetime.strftime('%Y-%m-%d %H:%M:%S') if trade.entry_datetime else ''
-            
+            if trade.entry_datetime:
+                date_str = trade.entry_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                date_str = ''
             x_values.append(date_str)
             y_values.append(cumulative)
+        chart_data = {'x': x_values, 'y': y_values}
 
-        chart_data = {
-            'x': x_values,
-            'y': y_values
-        }
-
-
-    # Contexte à passer au template
     context = {
         'strategies': strategies,
         'selected_strategy': selected_strategy,
         'total_profit': total_profit,
         'nb_trades': nb_trades,
         'win_rate': win_rate,
-        'chart_data': json.dumps(chart_data) if chart_data else None
+        'average_profit': average_profit,
+        'average_gain_percent': average_gain_percent,
+        'chart_data': json.dumps(chart_data) if chart_data else None,
     }
     return render(request, 'trades/stats.html', context)

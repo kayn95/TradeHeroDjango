@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container mt-4">
-  <h2>Statistiques</h2>
+  <h2>Statistiques de la Stratégie</h2>
 
   <!-- Formulaire pour choisir la stratégie -->
   <form method="get" class="form-inline mb-4">
@@ -12,11 +12,7 @@
     <select name="strategy_id" id="strategy_id" class="form-control mr-2">
       <option value="">-- Sélectionnez --</option>
       {% for strat in strategies %}
-        <option value="{{ strat.id }}"
-          {% if selected_strategy and strat.id == selected_strategy.id %}
-            selected
-          {% endif %}
-        >
+        <option value="{{ strat.id }}" {% if selected_strategy and strat.id == selected_strategy.id %}selected{% endif %}>
           {{ strat.name }}
         </option>
       {% endfor %}
@@ -26,15 +22,36 @@
 
   {% if selected_strategy %}
     <hr>
-    <h4>Stratégie : {{ selected_strategy.name }}</h4>
-    <p><strong>Description :</strong><br>{{ selected_strategy.description|linebreaks }}</p>
-
-    <p>Profit total : <strong>{{ total_profit }}</strong></p>
-    <p>Nombre de trades : <strong>{{ nb_trades }}</strong></p>
-    <p>Taux de réussite : <strong>{{ win_rate|floatformat:"2" }} %</strong></p>
+    <div class="row">
+      <div class="col-md-6">
+        <h4>{{ selected_strategy.name }}</h4>
+        <p><strong>Description :</strong><br>{{ selected_strategy.description|linebreaks }}</p>
+        <p><strong>Profit total :</strong> {{ total_profit|floatformat:"2" }}</p>
+        <p><strong>Nombre de trades :</strong> {{ nb_trades }}</p>
+        <p><strong>Taux de réussite :</strong> {{ win_rate|floatformat:"2" }} %</p>
+        <p><strong>Profit moyen par trade :</strong> {{ average_profit|floatformat:"2" }}</p>
+        <p><strong>Gain moyen (%) par trade :</strong> {{ average_gain_percent|floatformat:"2" }} %</p>
+      </div>
+      <div class="col-md-6">
+        {% if selected_strategy.screenshots.exists %}
+          <p><strong>Captures d'écran :</strong></p>
+          <div class="row">
+            {% for screenshot in selected_strategy.screenshots.all %}
+              <div class="col-4 mb-2">
+                <a href="{{ screenshot.image.url }}" data-toggle="lightbox" data-gallery="strategy-gallery">
+                  <img src="{{ screenshot.image.url }}" alt="Screenshot" class="img-thumbnail">
+                </a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">Aucune capture d'écran disponible pour cette stratégie.</p>
+        {% endif %}
+      </div>
+    </div>
 
     <div class="mt-4">
-      <!-- Conteneur du graphique -->
+      <h5>Évolution du profit cumulatif dans le temps</h5>
       <canvas id="myChart" width="800" height="400"></canvas>
     </div>
   {% else %}
@@ -43,24 +60,20 @@
 </div>
 {% endblock %}
 
-
 {% block extra_js %}
 {% if chart_data %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Récupération des données JSON passées depuis la vue
   const data = JSON.parse('{{ chart_data|safe }}');
 
-  // data.x => Les dates
-  // data.y => Le profit cumulatif à chaque trade
   const ctx = document.getElementById('myChart').getContext('2d');
   const myChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.x,
+      labels: data.x,  // Dates des trades
       datasets: [{
         label: 'Profit Cumulatif',
-        data: data.y,
+        data: data.y,   // Profit cumulatif
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 1,
@@ -70,9 +83,7 @@
     options: {
       responsive: true,
       scales: {
-        y: {
-          beginAtZero: false
-        }
+        y: { beginAtZero: false }
       }
     }
   });
