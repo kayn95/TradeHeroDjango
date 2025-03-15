@@ -203,11 +203,11 @@ def strategy_list(request):
     Affiche la liste des stratégies. Le superuser voit toutes les stratégies,
     sinon seules celles de l'utilisateur connecté.
     """
-    if request.user.is_superuser:
-        strategies = Strategy.objects.all()
-    else:
-        strategies = Strategy.objects.filter(user=request.user)
-
+    #if request.user.is_superuser:
+     #   strategies = Strategy.objects.all()
+    #else:
+     #   strategies = Strategy.objects.filter(user=request.user)
+    strategies = Strategy.objects.filter(user=request.user)
     return render(request, 'trades/strategy_list.html', {'strategies': strategies})
 
 
@@ -874,6 +874,8 @@ def add_trade_comment(request):
     })
 
 
+# -----------------------------------
+# Vue pour les statistiques
 @login_required
 def stats_view(request):
     # Récupérer toutes les stratégies de l'utilisateur connecté
@@ -890,6 +892,8 @@ def stats_view(request):
     win_rate = 0
     average_profit = 0
     average_gain_percent = 0
+    total_investment = 0  # Nouveau : Capital investi
+    roi = 0  # Nouveau : Return on Investment
     chart_data = None
 
     if strategy_id:
@@ -902,6 +906,15 @@ def stats_view(request):
         win_trades = trades.filter(profit_loss__gt=0).count()
         win_rate = (win_trades / nb_trades * 100) if nb_trades > 0 else 0
         average_profit = total_profit / nb_trades if nb_trades > 0 else 0
+
+        # Calcul du capital investi total
+        for trade in trades:
+            if trade.entry_price and trade.quantity:
+                total_investment += float(trade.entry_price) * int(trade.quantity)
+
+        # Calcul du ROI
+        if total_investment > 0:
+            roi = (total_profit / total_investment) * 100
 
         # Calcul du pourcentage moyen de gain par trade
         percentages = []
@@ -936,6 +949,8 @@ def stats_view(request):
         'win_rate': win_rate,
         'average_profit': average_profit,
         'average_gain_percent': average_gain_percent,
+        'total_investment': total_investment,  # Ajout du capital investi
+        'roi': roi,  # Ajout du ROI
         'chart_data': json.dumps(chart_data) if chart_data else None,
     }
     return render(request, 'trades/stats.html', context)

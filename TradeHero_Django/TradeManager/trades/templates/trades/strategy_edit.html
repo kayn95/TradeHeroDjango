@@ -1,5 +1,4 @@
 <!-- trades/templates/trades/strategy_edit.html -->
-
 {% extends 'trades/base.html' %}
 
 {% block title %}
@@ -20,7 +19,6 @@
         {% endif %}
     </h2>
 
-    <!-- Affichage des messages d'erreur -->
     {% if form.errors or formset.errors %}
         <div class="alert alert-danger">
             <strong>Veuillez corriger les erreurs ci-dessous :</strong>
@@ -28,8 +26,8 @@
                 {% for field, errors in form.errors.items %}
                     <li><strong>{{ field|capfirst }} :</strong> {{ errors|join:", " }}</li>
                 {% endfor %}
-                {% for form in formset.forms %}
-                    {% for error in form.errors.values %}
+                {% for sub_form in formset.forms %}
+                    {% for error in sub_form.errors.values %}
                         <li>{{ error|join:", " }}</li>
                     {% endfor %}
                 {% endfor %}
@@ -39,8 +37,6 @@
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-
-        <!-- Champs du formulaire principal (StrategyForm) -->
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
                 Informations de la Stratégie
@@ -63,7 +59,6 @@
             </div>
         </div>
 
-        <!-- Formset pour les captures d'écran -->
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
                 Captures d'écran
@@ -72,7 +67,6 @@
                 {{ formset.management_form }}
                 <div id="formset">
                     {% for form in formset %}
-                        {{ form.id }} <!-- Assurez-vous que le champ 'id' est rendu avec sa valeur -->
                         <div class="form-row align-items-center mb-3">
                             <div class="col-md-8">
                                 {{ form.image.label_tag }}
@@ -99,7 +93,6 @@
             </div>
         </div>
 
-        <!-- Boutons de soumission -->
         <div class="d-flex justify-content-between">
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save"></i> Enregistrer
@@ -109,44 +102,39 @@
             </a>
         </div>
     </form>
-
-    <!-- Template pour un nouveau formulaire de screenshot -->
-    <div id="empty-form" class="d-none">
-        <div class="form-row align-items-center mb-3">
-            <div class="col-md-8">
-                {{ formset.empty_form.image.label_tag }}
-                {{ formset.empty_form.image }}
-                {% for error in formset.empty_form.image.errors %}
-                    <small class="form-text text-danger">{{ error }}</small>
-                {% endfor %}
-            </div>
-            <div class="col-md-4 text-center">
-                <div class="form-check mt-4">
-                    {{ formset.empty_form.DELETE }}
-                    {{ formset.empty_form.DELETE.label_tag }}
-                </div>
-            </div>
-        </div>
-        <hr>
-    </div>
 </div>
 
-<!-- Script pour ajouter dynamiquement des formulaires de screenshot -->
+<div id="empty-form" class="d-none">
+    <div class="form-row align-items-center mb-3">
+        <div class="col-md-8">
+            {{ formset.empty_form.image.label_tag }}
+            {{ formset.empty_form.image }}
+            {% for error in formset.empty_form.image.errors %}
+                <small class="form-text text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+        <div class="col-md-4 text-center">
+            <div class="form-check mt-4">
+                {{ formset.empty_form.DELETE }}
+                {{ formset.empty_form.DELETE.label_tag }}
+            </div>
+        </div>
+    </div>
+    <hr>
+</div>
+
+{% block extra_js %}
 <script>
     document.getElementById('add-more').addEventListener('click', function(e) {
         e.preventDefault();
         var formsetDiv = document.getElementById('formset');
         var emptyFormDiv = document.getElementById('empty-form').innerHTML;
-        var formIdx = parseInt(document.getElementById('id_screenshots-TOTAL_FORMS').value);
-
-        // Remplacer __prefix__ par formIdx
+        var totalForms = document.getElementById('id_screenshots-TOTAL_FORMS');
+        var formIdx = parseInt(totalForms.value);
         var newForm = emptyFormDiv.replace(/__prefix__/g, formIdx);
-
-        // Ajouter le nouveau formulaire
         formsetDiv.insertAdjacentHTML('beforeend', newForm);
-
-        // Incrémenter le TOTAL_FORMS
-        document.getElementById('id_screenshots-TOTAL_FORMS').value = formIdx + 1;
+        totalForms.value = formIdx + 1;
     });
 </script>
+{% endblock %}
 {% endblock %}

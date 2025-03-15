@@ -1,4 +1,6 @@
+<!-- trades/templates/trades/trade_detail.html -->
 {% extends 'trades/base.html' %}
+
 {% block title %}Détails du Trade{% endblock %}
 
 {% block content %}
@@ -27,9 +29,7 @@
                 <div class="row">
                     {% for screenshot in trade.screenshots.all %}
                         <div class="col-md-3 mb-2">
-                            <a href="{{ screenshot.image.url }}" 
-                               data-toggle="lightbox" 
-                               data-gallery="trade-gallery{{ trade.pk }}">
+                            <a href="{{ screenshot.image.url }}" data-toggle="lightbox" data-gallery="trade-gallery{{ trade.pk }}">
                                 <img src="{{ screenshot.image.url }}" alt="Screenshot" class="img-thumbnail">
                             </a>
                         </div>
@@ -41,8 +41,6 @@
         </div>
     </div>
 
-    <!-- Boutons d’actions : Modifier / Supprimer
-         seulement si can_edit_delete est True -->
     {% if can_edit_delete %}
         <a href="{% url 'trade_edit' trade.pk %}" class="btn btn-warning">
             <i class="fas fa-edit"></i> Modifier
@@ -52,12 +50,9 @@
         </a>
     {% endif %}
 
-    <!-- Bouton de retour : si student_id est None,
-         c'est l'élève (ou superuser) => bouton vers trade_list
-         sinon, c’est un coach => bouton vers coach_student_trades -->
     {% if student_id %}
         <a href="{% url 'coach_student_trades' student_id %}" class="btn btn-info ml-2">
-            <i class="fas fa-users"></i> Retour aux trades de l'élève
+            <i class="fas fa-arrow-left"></i> Retour aux trades de l'élève
         </a>
     {% else %}
         <a href="{% url 'trade_list' %}" class="btn btn-secondary ml-2">

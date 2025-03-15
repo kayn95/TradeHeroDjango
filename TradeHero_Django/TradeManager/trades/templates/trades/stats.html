@@ -1,10 +1,11 @@
+<!-- trades/templates/trades/stats.html -->
 {% extends 'trades/base.html' %}
 
 {% block title %}Statistiques{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-  <h2>Statistiques de la Stratégie</h2>
+  <h2 class="mb-4">Statistiques de la Stratégie</h2>
 
   <!-- Formulaire pour choisir la stratégie -->
   <form method="get" class="form-inline mb-4">
@@ -23,36 +24,60 @@
   {% if selected_strategy %}
     <hr>
     <div class="row">
+      <!-- Informations et métriques -->
       <div class="col-md-6">
-        <h4>{{ selected_strategy.name }}</h4>
-        <p><strong>Description :</strong><br>{{ selected_strategy.description|linebreaks }}</p>
-        <p><strong>Profit total :</strong> {{ total_profit|floatformat:"2" }}</p>
-        <p><strong>Nombre de trades :</strong> {{ nb_trades }}</p>
-        <p><strong>Taux de réussite :</strong> {{ win_rate|floatformat:"2" }} %</p>
-        <p><strong>Profit moyen par trade :</strong> {{ average_profit|floatformat:"2" }}</p>
-        <p><strong>Gain moyen (%) par trade :</strong> {{ average_gain_percent|floatformat:"2" }} %</p>
-      </div>
-      <div class="col-md-6">
-        {% if selected_strategy.screenshots.exists %}
-          <p><strong>Captures d'écran :</strong></p>
-          <div class="row">
-            {% for screenshot in selected_strategy.screenshots.all %}
-              <div class="col-4 mb-2">
-                <a href="{{ screenshot.image.url }}" data-toggle="lightbox" data-gallery="strategy-gallery">
-                  <img src="{{ screenshot.image.url }}" alt="Screenshot" class="img-thumbnail">
-                </a>
-              </div>
-            {% endfor %}
+        <div class="card mb-3">
+          <div class="card-header bg-primary text-white">
+            Informations sur la Stratégie
           </div>
-        {% else %}
-          <p class="text-muted">Aucune capture d'écran disponible pour cette stratégie.</p>
-        {% endif %}
+          <div class="card-body">
+            <h4 class="card-title">{{ selected_strategy.name }}</h4>
+            <p class="card-text">{{ selected_strategy.description|linebreaks }}</p>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item"><strong>Profit total :</strong> {{ total_profit|floatformat:"2" }} $</li>
+              <li class="list-group-item"><strong>Nombre de trades :</strong> {{ nb_trades }}</li>
+              <li class="list-group-item"><strong>Taux de réussite :</strong> {{ win_rate|floatformat:"2" }} %</li>
+              <li class="list-group-item"><strong>Profit moyen par trade :</strong> {{ average_profit|floatformat:"2" }} $</li>
+              
+              
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Captures d'écran -->
+      <div class="col-md-6">
+        <div class="card mb-3">
+          <div class="card-header bg-secondary text-white">
+            Captures d'écran
+          </div>
+          <div class="card-body">
+            {% if selected_strategy.screenshots.exists %}
+              <div class="row">
+                {% for screenshot in selected_strategy.screenshots.all %}
+                  <div class="col-4 mb-2">
+                    <a href="{{ screenshot.image.url }}" data-toggle="lightbox" data-gallery="strategy-gallery">
+                      <img src="{{ screenshot.image.url }}" alt="Screenshot" class="img-fluid img-thumbnail">
+                    </a>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted">Aucune capture d'écran disponible pour cette stratégie.</p>
+            {% endif %}
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="mt-4">
-      <h5>Évolution du profit cumulatif dans le temps</h5>
-      <canvas id="myChart" width="800" height="400"></canvas>
+    <!-- Graphique de profit cumulatif -->
+    <div class="card mb-3">
+      <div class="card-header bg-info text-white">
+        Évolution du Profit Cumulatif
+      </div>
+      <div class="card-body">
+        <canvas id="myChart" width="800" height="400"></canvas>
+      </div>
     </div>
   {% else %}
     <p class="mt-3 text-muted">Sélectionnez une stratégie pour voir les statistiques.</p>
@@ -65,25 +90,31 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const data = JSON.parse('{{ chart_data|safe }}');
-
   const ctx = document.getElementById('myChart').getContext('2d');
   const myChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.x,  // Dates des trades
+      labels: data.x,
       datasets: [{
         label: 'Profit Cumulatif',
-        data: data.y,   // Profit cumulatif
+        data: data.y,
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1,
+        borderWidth: 2,
         fill: false
       }]
     },
     options: {
       responsive: true,
       scales: {
-        y: { beginAtZero: false }
+        y: {
+          beginAtZero: false,
+          ticks: {
+            callback: function(value) {
+              return value + ' €';
+            }
+          }
+        }
       }
     }
   });

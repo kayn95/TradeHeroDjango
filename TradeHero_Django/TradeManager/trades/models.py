@@ -8,7 +8,7 @@ from datetime import timedelta
 class Strategy(models.Model):
     """
     Représente une stratégie rattachée à un utilisateur (par exemple, l'élève),
-    comprenant un nom, une description, etc.
+    avec un nom et une description.
     """
     user = models.ForeignKey(
         User, 
@@ -24,11 +24,16 @@ class Strategy(models.Model):
 
 class Trade(models.Model):
     """
-    Représente un trade exécuté par l'utilisateur (élève) avec 
-    éventuellement une stratégie associée, des dates, etc.
+    Représente un trade réalisé par un utilisateur.
+    Peut être associé à une stratégie.
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    strategy = models.ForeignKey('Strategy', on_delete=models.SET_NULL, null=True, blank=True)
+    strategy = models.ForeignKey(
+        Strategy, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True
+    )
     symbol = models.CharField(max_length=50)
     trade_type = models.CharField(max_length=10)  # 'Long' ou 'Short'
     entry_datetime = models.DateTimeField(null=True, blank=True)
@@ -48,8 +53,7 @@ class Trade(models.Model):
 
 class Screenshot(models.Model):
     """
-    Représente une capture d'écran (fichier image) 
-    associée soit à un Trade, soit à une Strategy (ou les deux si besoin).
+    Capture d'écran liée à un Trade ou à une Strategy.
     """
     image = models.ImageField(upload_to='screenshots/')
     trade = models.ForeignKey(
@@ -77,12 +81,12 @@ class Screenshot(models.Model):
 
 class Profile(models.Model):
     """
-    Profil utilisateur permettant de distinguer coach / élève.
-    Un élève peut pointer vers un coach spécifique.
+    Profil utilisateur pour distinguer coach et élève.
+    Un élève peut être lié à un coach.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     is_coach = models.BooleanField(default=False)
-    # Champ coach : si un élève, on stocke l'utilisateur qui est son coach
+    # Si un élève, le champ coach pointe vers l'utilisateur qui est son coach
     coach = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -97,7 +101,7 @@ class Profile(models.Model):
 
 class Comment(models.Model):
     """
-    Commentaire laissé par un coach sur un trade donné.
+    Commentaire laissé par un coach sur un trade.
     """
     trade = models.ForeignKey(
         Trade, 
@@ -118,9 +122,7 @@ class Comment(models.Model):
 
 class CoachRequest(models.Model):
     """
-    Système de demande de coach : 
-    l'élève envoie une demande à un coach, 
-    qui peut accepter (True) ou refuser (False), ou ne pas encore répondre (None).
+    Demande d'un élève à un coach.
     """
     student = models.ForeignKey(
         User,
@@ -133,8 +135,7 @@ class CoachRequest(models.Model):
         related_name='pending_students'
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    accepted = models.BooleanField(null=True, blank=True)  
-    # None = pas répondu, True = accepté, False = refusé
+    accepted = models.BooleanField(null=True, blank=True)  # None = en attente, True = accepté, False = refusé
 
     def __str__(self):
         return f"CoachRequest from {self.student.username} to {self.coach.username}"

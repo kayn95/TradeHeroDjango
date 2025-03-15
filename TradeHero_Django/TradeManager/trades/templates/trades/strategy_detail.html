@@ -1,3 +1,4 @@
+<!-- trades/templates/trades/strategy_detail.html -->
 {% extends 'trades/base.html' %}
 
 {% block title %}Détails de la Stratégie{% endblock %}
@@ -7,36 +8,30 @@
     <h2 class="mb-4">Détails de la Stratégie</h2>
 
     <div class="card mb-3">
-        <div class="card-header">
-            <strong>Nom de la stratégie :</strong>
-            {{ strategy.name }}
+        <div class="card-header bg-primary text-white">
+            <strong>Nom :</strong> {{ strategy.name }}
         </div>
         <div class="card-body">
-            <p><strong>Description :</strong><br>
-               {{ strategy.description|linebreaks }}</p>
-
+            <p><strong>Description :</strong><br>{{ strategy.description|linebreaks }}</p>
             <hr>
-
             <p><strong>Captures d'écran :</strong></p>
             {% if strategy.screenshots.exists %}
                 <div class="row">
                     {% for screenshot in strategy.screenshots.all %}
                         <div class="col-md-3 mb-2">
-                            <a href="{{ screenshot.image.url }}"
-                               data-toggle="lightbox"
-                               data-gallery="strategy-gallery{{ strategy.pk }}">
+                            <a href="{{ screenshot.image.url }}" data-toggle="lightbox" data-gallery="strategy-gallery{{ strategy.pk }}">
                                 <img src="{{ screenshot.image.url }}" alt="Screenshot" class="img-thumbnail">
                             </a>
                         </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <p>Aucune capture d'écran disponible.</p>
+                <p class="text-muted">Aucune capture d'écran disponible.</p>
             {% endif %}
         </div>
     </div>
 
-    <!-- Boutons Modifier / Supprimer si can_edit_delete -->
+    <!-- Boutons d'action -->
     {% if can_edit_delete %}
         <a href="{% url 'strategy_edit' strategy.pk %}" class="btn btn-warning">
             <i class="fas fa-edit"></i> Modifier
@@ -46,12 +41,10 @@
         </a>
     {% endif %}
 
-    <!-- Bouton de retour :
-         - Si student_id, on est coach => on retourne à coach_student_trades
-         - Sinon, on retourne à la strategy_list -->
+    <!-- Bouton de retour vers la liste des trades de l'élève si coach -->
     {% if student_id %}
         <a href="{% url 'coach_student_trades' student_id %}" class="btn btn-info ml-2">
-            <i class="fas fa-users"></i> Retour aux trades de l'élève
+            <i class="fas fa-arrow-left"></i> Retour aux trades de l'élève
         </a>
     {% else %}
         <a href="{% url 'strategy_list' %}" class="btn btn-secondary ml-2">

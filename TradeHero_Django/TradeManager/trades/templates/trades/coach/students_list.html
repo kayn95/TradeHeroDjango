@@ -1,40 +1,37 @@
+<!-- trades/templates/trades/students_list.html -->
 {% extends 'trades/base.html' %}
 
 {% block title %}Mes Élèves{% endblock %}
 
 {% block content %}
-<h2>Mes Élèves</h2>
-
-<!-- Si vous souhaitez un texte descriptif ou autre, vous pouvez le mettre ici -->
-<p class="text-muted">
-    Retrouvez ici la liste des élèves qui vous ont choisi comme coach.
-</p>
-
-<div class="table-responsive">
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Élève</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for student in students %}
-            <tr>
-                <td>{{ student.username }}</td>
-                <td>
-                    <!-- Lien pour accéder à la liste de ses trades (vue coach_student_trades) -->
-                    <a href="{% url 'coach_student_trades' student.pk %}" class="btn btn-primary btn-sm">
-                        Voir ses Trades
-                    </a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="2">Vous n'avez pas encore d'élèves.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="container mt-5">
+    <h2 class="mb-4">Mes Élèves</h2>
+    <p class="text-muted">Retrouvez ici la liste des élèves qui vous ont choisi comme coach.</p>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Élève</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>{{ student.username }}</td>
+                    <td>
+                        <a href="{% url 'coach_student_trades' student.pk %}" class="btn btn-primary btn-sm">
+                            Voir ses Trades
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2">Vous n'avez pas encore d'élèves.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
