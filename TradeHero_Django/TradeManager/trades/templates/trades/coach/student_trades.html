@@ -1,265 +1,275 @@
 <!-- trades/templates/trades/student_trade.html -->
-
 {% extends 'trades/base.html' %}
+{% load humanize %}
 
 {% block title %}Trades de {{ student.username }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">Trades de {{ student.username }}</h2>
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'coach_students_list' %}">Mes élèves</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Trades de {{ student.username }}</li>
+    </ol>
+  </nav>
 
-    <!-- Formulaire de filtrage par date -->
-    <form method="get" class="form-inline mb-3">
-        <label for="start_date" class="mr-2">Du :</label>
-        <input
-            type="date"
-            id="start_date"
-            name="start_date"
-            value="{{ start_date }}"
-            class="form-control mr-2"
-        >
-        <label for="end_date" class="mr-2">Au :</label>
-        <input
-            type="date"
-            id="end_date"
-            name="end_date"
-            value="{{ end_date }}"
-            class="form-control mr-2"
-        >
-        <button type="submit" class="btn btn-primary">Filtrer</button>
-        <a href="{% url 'coach_student_trades' student.pk %}" class="btn btn-secondary ml-2">
-            Réinitialiser
-        </a>
-    </form>
+  <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+    <h2 class="mb-2">Trades de {{ student.username }}</h2>
+  </div>
 
-    <!-- Afficher les messages de succès ou d'erreur -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Fermer">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Actions</th>
-                    <th>Capture d'écran</th>
-                    <th>Notes</th>
-                    <th>Commentaires du Coach</th>
-                    <th>Stratégie</th>
-                    <th>Symbole</th>
-                    <th>Type</th>
-                    <th>Date d'entrée</th>
-                    <th>Date de sortie</th>
-                    <th>Prix d'entrée</th>
-                    <th>Prix de sortie</th>
-                    <th>Quantité</th>
-                    <th>Profit/Perte</th>
-                    <th>Commission</th>
-                    <th>Durée</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for trade in trades %}
-                <tr>
-                    <!-- Colonne Actions -->
-                    <td>
-                        <a href="{% url 'trade_detail' trade.pk %}" class="btn btn-info btn-sm" title="Voir">
-                            <i class="fas fa-eye"></i>Voir
-                        </a>
-                    </td>
-
-                    <!-- Colonne Capture d'écran -->
-                    <td>
-                        {% if trade.screenshots.exists %}
-                            {% with screenshots=trade.screenshots.all %}
-                                {% if screenshots %}
-                                    <!-- Lien pour ouvrir le modal avec le carousel -->
-                                    <a href="#" data-toggle="modal" data-target="#imageModal{{ trade.pk }}">
-                                        <img src="{{ screenshots.first.image.url }}" alt="Screenshot" class="img-thumbnail" style="width: 100px; height: auto;">
-                                    </a>
-
-                                    <!-- Modal pour afficher les captures d'écran -->
-                                    <div class="modal fade" id="imageModal{{ trade.pk }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel{{ trade.pk }}" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="imageModalLabel{{ trade.pk }}">Captures d'écran du Trade #{{ trade.id }}</h5>
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
-                                                        <span aria-hidden="true">&times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div id="carousel{{ trade.pk }}" class="carousel slide" data-ride="carousel">
-                                                        <div class="carousel-inner">
-                                                            {% for screenshot in screenshots %}
-                                                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                                                <img src="{{ screenshot.image.url }}" class="d-block w-100" alt="Screenshot">
-                                                            </div>
-                                                            {% endfor %}
-                                                        </div>
-                                                        <a class="carousel-control-prev" href="#carousel{{ trade.pk }}" role="button" data-slide="prev">
-                                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                            <span class="sr-only">Précédent</span>
-                                                        </a>
-                                                        <a class="carousel-control-next" href="#carousel{{ trade.pk }}" role="button" data-slide="next">
-                                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                            <span class="sr-only">Suivant</span>
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
-                        {% else %}
-                            <!-- Indiquer qu'il n'y a pas de captures d'écran disponibles -->
-                            <p class="text-muted">Pas de capture</p>
-                        {% endif %}
-                    </td>
-
-                    <!-- Colonne Notes (Lecture Seule) -->
-                    <td>
-                        {% if trade.note %}
-                            <!-- Afficher la note existante -->
-                            <div class="border p-2 rounded">
-                                {{ trade.note }}
-                            </div>
-                        {% else %}
-                            <!-- Indiquer qu'il n'y a pas de note disponible -->
-                            <p class="text-muted">Aucune note disponible</p>
-                        {% endif %}
-                    </td>
-
-                    <!-- Colonne Commentaires du Coach -->
-                    <td>
-                        <!-- Liste des commentaires existants pour ce trade -->
-                        {% for comment in trade.comments.all %}
-                            <p>
-                                <strong>{{ comment.coach.username }} :</strong>
-                                {{ comment.content }}
-                                <br>
-                                <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
-                            </p>
-                        {% empty %}
-                            <p class="text-muted">Aucun commentaire</p>
-                        {% endfor %}
-
-                        <!-- Formulaire pour ajouter un commentaire (AJAX) -->
-                        <form method="post" class="mt-2 comment-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="trade_id" value="{{ trade.pk }}">
-                            <div class="form-group">
-                                <textarea name="content" class="form-control" placeholder="Ajouter un commentaire" required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm">Envoyer</button>
-                        </form>
-                    </td>
-
-                    <!-- Colonne Stratégie -->
-                    <td>
-                        {% if trade.strategy %}
-                            <a href="{% url 'strategy_detail' trade.strategy.pk %}">
-                                {{ trade.strategy.name }}
-                            </a>
-                        {% else %}
-                            <p class="text-muted">Aucune</p>
-                        {% endif %}
-                    </td>
-
-                    <!-- Autres Colonnes -->
-                    <td>{{ trade.symbol }}</td>
-                    <td>{{ trade.trade_type }}</td>
-                    <td>{{ trade.entry_datetime|date:"d/m/Y H:i" }}</td>
-                    <td>{{ trade.exit_datetime|date:"d/m/Y H:i" }}</td>
-                    <td>{{ trade.entry_price|floatformat:"2" }}</td>
-                    <td>{{ trade.exit_price|floatformat:"2" }}</td>
-                    <td>{{ trade.quantity }}</td>
-                    <td>{{ trade.profit_loss|floatformat:"2" }}</td>
-                    <td>{{ trade.commission|floatformat:"2" }}</td>
-                    <td>{{ trade.duration }}</td>
-                </tr>
-
-                <!-- Modal de Confirmation de Suppression pour chaque Trade -->
-                <div class="modal fade" id="deleteModal{{ trade.pk }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ trade.pk }}" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="deleteModalLabel{{ trade.pk }}">Confirmer la Suppression</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                Êtes-vous sûr de vouloir supprimer le trade <strong>#{{ trade.id }}</strong> ?
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                                <a href="{% url 'trade_delete' trade.pk %}" class="btn btn-danger">Supprimer</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </tbody>
-        </table>
+  <!-- Filtres -->
+  <form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-sm-4 col-md-3">
+      <label for="start_date" class="form-label">Du</label>
+      <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
     </div>
-</div>
-{% endblock %}
+    <div class="col-12 col-sm-4 col-md-3">
+      <label for="end_date" class="form-label">Au</label>
+      <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
+    </div>
+    <div class="col-12 col-sm-4 col-md-6 d-flex gap-2">
+      <button type="submit" class="btn btn-secondary flex-fill">Filtrer</button>
+      <a href="{% url 'coach_student_trades' student.pk %}" class="btn btn-outline-secondary">Réinitialiser</a>
+    </div>
+  </form>
 
-{% block extra_css %}
-<style>
-    /* Styles personnalisés si nécessaires */
-</style>
+  <!-- Messages -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Actions</th>
+          <th>Captures</th>
+          <th>Note</th>
+          <th>Commentaires du coach</th>
+          <th>Stratégie</th>
+          <th>Symbole</th>
+          <th>Type</th>
+          <th>Entrée</th>
+          <th>Sortie</th>
+          <th class="text-end">Prix entrée</th>
+          <th class="text-end">Prix sortie</th>
+          <th class="text-end">Quantité</th>
+          <th class="text-end">P/L</th>
+          <th class="text-end">Commission</th>
+          <th>Durée</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for trade in trades %}
+        <tr>
+          <!-- Actions -->
+          <td class="text-nowrap">
+            <a href="{% url 'trade_detail' trade.pk %}" class="btn btn-outline-secondary btn-sm">Voir</a>
+          </td>
+
+          <!-- Captures -->
+          <td class="text-nowrap">
+            {% with sc=trade.screenshots.all %}
+              {% if sc|length %}
+                <button
+                  type="button"
+                  class="btn btn-outline-primary btn-sm"
+                  data-bs-toggle="modal"
+                  data-bs-target="#screensModal"
+                  data-images='[{% for s in sc %}{"url":"{{ s.image.url|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'
+                  data-title="Captures – Trade #{{ trade.id }}"
+                >
+                  Voir ({{ sc|length }})
+                </button>
+              {% else %}
+                <span class="text-muted">Pas de capture</span>
+              {% endif %}
+            {% endwith %}
+          </td>
+
+          <!-- Note (lecture seule) -->
+          <td style="min-width:220px;">
+            {% if trade.note %}
+              <div class="border rounded p-2 small">{{ trade.note }}</div>
+            {% else %}
+              <span class="text-muted">Aucune</span>
+            {% endif %}
+          </td>
+
+          <!-- Commentaires du coach + formulaire -->
+          <td style="min-width:260px;">
+            <div class="mb-2">
+              {% for comment in trade.comments.all %}
+                <div class="small mb-2">
+                  <strong>{{ comment.coach.username }}</strong>
+                  <span class="text-muted">— {{ comment.created_at|date:"d/m/Y H:i" }}</span><br>
+                  {{ comment.content }}
+                </div>
+              {% empty %}
+                <span class="text-muted">Aucun commentaire</span>
+              {% endfor %}
+            </div>
+
+            <form method="post" class="comment-form">
+              {% csrf_token %}
+              <input type="hidden" name="trade_id" value="{{ trade.pk }}">
+              <textarea name="content" class="form-control form-control-sm" rows="2" placeholder="Ajouter un commentaire" required></textarea>
+              <div class="d-flex justify-content-end mt-1">
+                <button type="submit" class="btn btn-primary btn-sm">Envoyer</button>
+              </div>
+            </form>
+          </td>
+
+          <!-- Stratégie -->
+          <td class="text-nowrap">
+            {% if trade.strategy %}
+              <a href="{% url 'strategy_detail' trade.strategy.pk %}" class="text-decoration-none">
+                {{ trade.strategy.name }}
+              </a>
+            {% else %}
+              <span class="text-muted">Aucune</span>
+            {% endif %}
+          </td>
+
+          <td>{{ trade.symbol }}</td>
+          <td>
+            {% if trade.trade_type == 'LONG' %}
+              <span class="badge text-bg-success">Long</span>
+            {% elif trade.trade_type == 'SHORT' %}
+              <span class="badge text-bg-danger">Short</span>
+            {% else %}
+              <span class="badge text-bg-secondary">{{ trade.trade_type }}</span>
+            {% endif %}
+          </td>
+          <td class="text-nowrap">{{ trade.entry_datetime|date:"d/m/Y H:i" }}</td>
+          <td class="text-nowrap">{{ trade.exit_datetime|date:"d/m/Y H:i" }}</td>
+          <td class="text-end">{{ trade.entry_price|floatformat:2|intcomma }}</td>
+          <td class="text-end">{{ trade.exit_price|default_if_none:''|floatformat:2|intcomma }}</td>
+          <td class="text-end">{{ trade.quantity|floatformat:2|intcomma }}</td>
+          <td class="text-end">
+            {% if trade.profit_loss > 0 %}
+              <span class="text-success fw-semibold">+{{ trade.profit_loss|floatformat:2|intcomma }}</span>
+            {% elif trade.profit_loss < 0 %}
+              <span class="text-danger fw-semibold">{{ trade.profit_loss|floatformat:2|intcomma }}</span>
+            {% else %}
+              {{ trade.profit_loss|floatformat:2|intcomma }}
+            {% endif %}
+          </td>
+          <td class="text-end">{{ trade.commission|floatformat:2|intcomma }}</td>
+          <td class="text-nowrap">{{ trade.duration }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="15" class="text-center text-muted py-4">Aucun trade pour cette période.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal unique : carousel screenshots -->
+<div class="modal fade" id="screensModal" tabindex="-1" aria-labelledby="screensLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="screensLabel">Captures</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <div id="screensCarousel" class="carousel slide" data-bs-ride="false">
+          <div class="carousel-inner" id="screensCarouselInner"><!-- items injectés via JS --></div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#screensCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Précédent</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#screensCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Suivant</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast (feedback AJAX) -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+  <div id="toastFeedback" class="toast align-items-center text-bg-primary border-0" role="status" aria-live="polite" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">Action effectuée.</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fermer"></button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Gestion des formulaires de commentaire avec AJAX
-        const commentForms = document.querySelectorAll('.comment-form');
-
-        commentForms.forEach(function(form) {
-            form.addEventListener('submit', function(event) {
-                event.preventDefault(); // Empêche la soumission par défaut
-
-                const formData = new FormData(form);
-                const url = "{% url 'add_trade_comment' %}"; // Assurez-vous que cette URL est définie
-
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest', // Indique une requête AJAX
-                        'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.status === 'success') {
-                        // Affiche un message de succès
-                        alert(data.message);
-                        // Optionnel : Ajouter le nouveau commentaire à la liste sans recharger la page
-                        // Pour simplifier, nous rechargeons la page
-                        location.reload();
-                    } else {
-                        // Affiche un message d'erreur
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Erreur:', error);
-                    alert('Une erreur est survenue lors de l\'ajout du commentaire.');
-                });
-            });
-        });
+(function(){
+  // Screens modal: injecte dynamiquement les items du carousel
+  const screensModal = document.getElementById('screensModal');
+  const carouselInner = document.getElementById('screensCarouselInner');
+  if (screensModal && carouselInner) {
+    screensModal.addEventListener('show.bs.modal', function (event) {
+      const btn = event.relatedTarget;
+      const imagesJson = btn?.getAttribute('data-images') || '[]';
+      const title = btn?.getAttribute('data-title') || 'Captures';
+      document.getElementById('screensLabel').textContent = title;
+      let imgs = [];
+      try { imgs = JSON.parse(imagesJson); } catch (_) {}
+      carouselInner.innerHTML = '';
+      if (!imgs.length) {
+        carouselInner.innerHTML = '<div class="text-muted">Aucune image</div>';
+        return;
+      }
+      imgs.forEach((o, i) => {
+        const item = document.createElement('div');
+        item.className = 'carousel-item' + (i === 0 ? ' active' : '');
+        item.innerHTML = `<img src="${o.url}" class="d-block w-100" alt="Screenshot ${i+1}">`;
+        carouselInner.appendChild(item);
+      });
     });
+  }
+
+  // Toast helper
+  function showToast(msg, ok=true){
+    const t = document.getElementById('toastFeedback');
+    const body = document.getElementById('toastBody');
+    if (!t || !body) return;
+    body.textContent = msg || (ok ? 'Action effectuée.' : 'Erreur.');
+    t.classList.remove('text-bg-primary','text-bg-danger');
+    t.classList.add(ok ? 'text-bg-primary' : 'text-bg-danger');
+    const toast = bootstrap.Toast.getOrCreateInstance(t, { delay: 2500 });
+    toast.show();
+  }
+
+  // Commentaires AJAX
+  document.querySelectorAll('.comment-form').forEach((form) => {
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      const fd = new FormData(form);
+      fetch("{% url 'add_trade_comment' %}", {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd
+      }).then(r => r.json())
+       .then(data => {
+          if (data.status === 'success') {
+            showToast(data.message || 'Commentaire ajouté.');
+            setTimeout(() => window.location.reload(), 600);
+          } else {
+            showToast(data.message || 'Erreur lors de l’ajout du commentaire.', false);
+          }
+       })
+       .catch(() => showToast('Erreur réseau.', false));
+    });
+  });
+})();
 </script>
 {% endblock %}

@@ -2,139 +2,158 @@
 {% extends 'trades/base.html' %}
 
 {% block title %}
-    {% if strategy %}
-        Modifier la Stratégie
-    {% else %}
-        Nouvelle Stratégie
-    {% endif %}
+  {% if strategy %}Modifier la Stratégie{% else %}Nouvelle Stratégie{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">
-        {% if strategy %}
-            <i class="fas fa-edit"></i> Modifier la Stratégie
-        {% else %}
-            <i class="fas fa-plus"></i> Nouvelle Stratégie
-        {% endif %}
-    </h2>
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'strategy_list' %}">Stratégies</a></li>
+      <li class="breadcrumb-item active" aria-current="page">
+        {% if strategy %}Modifier{% else %}Nouvelle{% endif %}
+      </li>
+    </ol>
+  </nav>
 
-    {% if form.errors or formset.errors %}
-        <div class="alert alert-danger">
-            <strong>Veuillez corriger les erreurs ci-dessous :</strong>
-            <ul class="mb-0">
-                {% for field, errors in form.errors.items %}
-                    <li><strong>{{ field|capfirst }} :</strong> {{ errors|join:", " }}</li>
-                {% endfor %}
-                {% for sub_form in formset.forms %}
-                    {% for error in sub_form.errors.values %}
-                        <li>{{ error|join:", " }}</li>
-                    {% endfor %}
-                {% endfor %}
-            </ul>
-        </div>
-    {% endif %}
+  <h2 class="mb-3">
+    {% if strategy %}Modifier la Stratégie{% else %}Nouvelle Stratégie{% endif %}
+  </h2>
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                Informations de la Stratégie
-            </div>
-            <div class="card-body">
-                <div class="form-group">
-                    {{ form.name.label_tag }}
-                    {{ form.name }}
-                    {% for error in form.name.errors %}
-                        <small class="form-text text-danger">{{ error }}</small>
-                    {% endfor %}
-                </div>
-                <div class="form-group">
-                    {{ form.description.label_tag }}
-                    {{ form.description }}
-                    {% for error in form.description.errors %}
-                        <small class="form-text text-danger">{{ error }}</small>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header bg-secondary text-white">
-                Captures d'écran
-            </div>
-            <div class="card-body">
-                {{ formset.management_form }}
-                <div id="formset">
-                    {% for form in formset %}
-                        <div class="form-row align-items-center mb-3">
-                            <div class="col-md-8">
-                                {{ form.image.label_tag }}
-                                {{ form.image }}
-                                {% for error in form.image.errors %}
-                                    <small class="form-text text-danger">{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                            <div class="col-md-4 text-center">
-                                {% if form.instance.pk %}
-                                    <div class="form-check mt-4">
-                                        {{ form.DELETE }}
-                                        {{ form.DELETE.label_tag }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <hr>
-                    {% endfor %}
-                </div>
-                <button type="button" class="btn btn-secondary" id="add-more">
-                    <i class="fas fa-plus"></i> Ajouter un Screenshot
-                </button>
-            </div>
-        </div>
-
-        <div class="d-flex justify-content-between">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Enregistrer
-            </button>
-            <a href="{% url 'strategy_list' %}" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Annuler
-            </a>
-        </div>
-    </form>
-</div>
-
-<div id="empty-form" class="d-none">
-    <div class="form-row align-items-center mb-3">
-        <div class="col-md-8">
-            {{ formset.empty_form.image.label_tag }}
-            {{ formset.empty_form.image }}
-            {% for error in formset.empty_form.image.errors %}
-                <small class="form-text text-danger">{{ error }}</small>
-            {% endfor %}
-        </div>
-        <div class="col-md-4 text-center">
-            <div class="form-check mt-4">
-                {{ formset.empty_form.DELETE }}
-                {{ formset.empty_form.DELETE.label_tag }}
-            </div>
-        </div>
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+      {% for e in form.non_field_errors %}{{ e }}{% endfor %}
     </div>
-    <hr>
+  {% endif %}
+
+  {% if formset.non_form_errors %}
+    <div class="alert alert-danger" role="alert">
+      {% for e in formset.non_form_errors %}{{ e }}{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+    {% csrf_token %}
+
+    <!-- Infos stratégie -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header">Informations de la stratégie</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="{{ form.name.id_for_label }}" class="form-label">Nom</label>
+          {{ form.name }}
+          {% if form.name.errors %}
+            <div class="invalid-feedback d-block">
+              {% for e in form.name.errors %}{{ e }}{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+          {{ form.description }}
+          {% if form.description.errors %}
+            <div class="invalid-feedback d-block">
+              {% for e in form.description.errors %}{{ e }}{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Screenshots -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Captures d’écran</span>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="add-more">
+          Ajouter un screenshot
+        </button>
+      </div>
+      <div class="card-body">
+        {{ formset.management_form }}
+
+        <div id="formset-rows">
+          {% for f in formset %}
+            <div class="row g-3 align-items-center mb-3 formset-row">
+              <div class="col-md-8">
+                <label class="form-label" for="{{ f.image.id_for_label }}">Fichier image</label>
+                {{ f.image }}
+                {% if f.image.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for e in f.image.errors %}{{ e }}{% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="col-md-4 text-md-end">
+                {% if f.instance.pk %}
+                  <div class="form-check mt-4">
+                    {{ f.DELETE }} <label class="form-check-label" for="{{ f.DELETE.id_for_label }}">Supprimer</label>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            <hr class="my-3">
+          {% endfor %}
+        </div>
+
+        <!-- Gabarit (empty_form) caché -->
+        <template id="empty-form-template">
+          <div class="row g-3 align-items-center mb-3 formset-row">
+            <div class="col-md-8">
+              <label class="form-label">Fichier image</label>
+              {{ formset.empty_form.image.as_widget|safe }}
+            </div>
+            <div class="col-md-4 text-md-end">
+              <div class="form-check mt-4 d-none">
+                {{ formset.empty_form.DELETE }} <label class="form-check-label">Supprimer</label>
+              </div>
+            </div>
+          </div>
+          <hr class="my-3">
+        </template>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button id="submitBtn" type="submit" class="btn btn-primary">Enregistrer</button>
+      <a href="{% url 'strategy_list' %}" class="btn btn-outline-secondary">Annuler</a>
+    </div>
+  </form>
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
-    document.getElementById('add-more').addEventListener('click', function(e) {
-        e.preventDefault();
-        var formsetDiv = document.getElementById('formset');
-        var emptyFormDiv = document.getElementById('empty-form').innerHTML;
-        var totalForms = document.getElementById('id_screenshots-TOTAL_FORMS');
-        var formIdx = parseInt(totalForms.value);
-        var newForm = emptyFormDiv.replace(/__prefix__/g, formIdx);
-        formsetDiv.insertAdjacentHTML('beforeend', newForm);
-        totalForms.value = formIdx + 1;
+(function(){
+  // Empêcher double submit
+  const form = document.querySelector('form.needs-validation');
+  const submitBtn = document.getElementById('submitBtn');
+  if (form && submitBtn) {
+    form.addEventListener('submit', function(){
+      submitBtn.disabled = true;
     });
+  }
+
+  // Ajout dynamique d'un formulaire du formset
+  const addBtn = document.getElementById('add-more');
+  const rows = document.getElementById('formset-rows');
+  const tpl = document.getElementById('empty-form-template');
+  // Détecte automatiquement l'input TOTAL_FORMS (quel que soit le prefix)
+  const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+
+  function replaceIndex(html, index) {
+    // Remplace __prefix__ par l'index numérique
+    return html.replaceAll('__prefix__', index);
+  }
+
+  if (addBtn && rows && tpl && totalFormsInput) {
+    addBtn.addEventListener('click', function(){
+      const currentIndex = parseInt(totalFormsInput.value, 10) || 0;
+      const html = replaceIndex(tpl.innerHTML, currentIndex);
+      rows.insertAdjacentHTML('beforeend', html);
+      totalFormsInput.value = currentIndex + 1;
+    });
+  }
+})();
 </script>
-{% endblock %}
 {% endblock %}

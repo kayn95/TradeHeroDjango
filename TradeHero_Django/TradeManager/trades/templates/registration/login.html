@@ -1,30 +1,126 @@
 <!-- trades/templates/registration/login.html -->
-
 {% extends 'trades/base.html' %}
+{% load static %}
 
 {% block title %}Connexion{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <h2>Connexion</h2>
-        {% if error %}
-            <div class="alert alert-danger" role="alert">
-                {{ error }}
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4 p-md-5">
+        <h1 class="h3 mb-3">Connexion</h1>
+
+        {# Messages Django (success, error, info, warning) #}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} mb-3" role="alert">
+              {{ message }}
             </div>
+          {% endfor %}
         {% endif %}
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="username">Nom d'utilisateur</label>
-                <input type="text" class="form-control" id="username" name="username" placeholder="Entrez votre nom d'utilisateur">
+
+        {# Erreur explicite passée par la vue #}
+        {% if error %}
+          <div class="alert alert-danger mb-3" role="alert">
+            {{ error }}
+          </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {# Conserve le redirect si présent #}
+          {% if request.GET.next %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+          {% endif %}
+
+          <div class="mb-3">
+            <label for="id_username" class="form-label">Nom d'utilisateur</label>
+            <input
+              type="text"
+              class="form-control"
+              id="id_username"
+              name="username"
+              placeholder="Entrez votre nom d'utilisateur"
+              value="{{ request.POST.username|default:'' }}"
+              autocomplete="username"
+              autofocus
+              required
+            >
+            <div class="form-text">Votre identifiant ou email (si supporté).</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="id_password" class="form-label">Mot de passe</label>
+            <div class="input-group">
+              <input
+                type="password"
+                class="form-control"
+                id="id_password"
+                name="password"
+                placeholder="Entrez votre mot de passe"
+                autocomplete="current-password"
+                required
+              >
+              <button class="btn btn-outline-secondary" type="button" id="togglePassword" aria-label="Afficher/masquer le mot de passe">
+                <span class="password-eye">👁️</span>
+              </button>
             </div>
-            <div class="form-group">
-                <label for="password">Mot de passe</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Entrez votre mot de passe">
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="1" id="id_remember" name="remember">
+              <label class="form-check-label" for="id_remember">Se souvenir de moi</label>
             </div>
-            <button type="submit" class="btn btn-primary">Se connecter</button>
+            {% url 'password_reset' as reset_url %}
+            {% if reset_url %}
+              <a href="{{ reset_url }}" class="link-secondary text-decoration-none">Mot de passe oublié&nbsp;?</a>
+            {% endif %}
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              Se connecter
+            </button>
+          </div>
         </form>
+
+        <hr class="my-4">
+
+        <p class="mb-0 text-muted">
+          Pas de compte ?
+          {% url 'register' as register_url %}
+          {% if register_url %}
+            <a href="{{ register_url }}" class="link-primary text-decoration-none">Créer un compte</a>
+          {% endif %}
+        </p>
+      </div>
     </div>
+  </div>
 </div>
+
+<script>
+  // Toggle visibilité mot de passe
+  (function(){
+    const pwd = document.getElementById('id_password');
+    const btn = document.getElementById('togglePassword');
+    if (pwd && btn) {
+      btn.addEventListener('click', function () {
+        const isPwd = pwd.getAttribute('type') === 'password';
+        pwd.setAttribute('type', isPwd ? 'text' : 'password');
+        this.setAttribute('aria-pressed', String(isPwd));
+      });
+    }
+    // Désactiver le bouton submit pour éviter double envoi
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+    if (form && submitBtn) {
+      form.addEventListener('submit', function () {
+        submitBtn.disabled = true;
+      });
+    }
+  })();
+</script>
 {% endblock %}

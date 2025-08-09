@@ -1,286 +1,385 @@
 <!-- trades/templates/trades/trade_list.html -->
-
 {% extends 'trades/base.html' %}
+{% load humanize %}
 
 {% block title %}Liste des Trades{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">Mes Trades</h2>
-    <form method="get" class="form-inline mb-3">
-        <label for="start_date" class="mr-2">Du :</label>
-        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control mr-2">
-        <label for="end_date" class="mr-2">Au :</label>
-        <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control mr-2">
-        <button type="submit" class="btn btn-primary">Filtrer</button>
-        <a href="{% url 'trade_list' %}" class="btn btn-secondary ml-2">Réinitialiser</a>
-        <a href="{% url 'import_csv' %}" class="btn btn-primary ml-2">Importer des Trades</a>
-        <a href="{% url 'trade_new' %}" class="btn btn-success ml-2">Ajouter un Trade</a>
-    </form>
-
-    <!-- Afficher les messages de succès ou d'erreur -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Fermer">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="table-responsive">
-        <table class="table table-striped table-responsive">
-            <thead>
-                <tr>
-                    <th>Actions</th>
-                    <th>Capture d'écran</th>
-                    <th>Commentaires du Coach</th>
-                    <th>Notes</th>
-                    <th>Stratégie</th>
-                    <th>Symbole</th>
-                    <th>Type</th>
-                    <th>Date d'entrée</th>
-                    <th>Date de sortie</th>
-                    <th>Prix d'entrée</th>
-                    <th>Prix de sortie</th>
-                    <th>Quantité</th>
-                    <th>Profit/Perte</th>
-                    <th>Commission</th>
-                    <th>Durée</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for trade in trades %}
-                <tr>
-                    <td>
-                        <a href="{% url 'trade_detail' trade.pk %}" class="btn btn-info btn-sm" title="Voir">
-                            <i class="fas fa-eye"></i>Voir
-                        </a>
-                        <a href="{% url 'trade_edit' trade.pk %}" class="btn btn-warning btn-sm" title="Modifier">
-                            <i class="fas fa-edit"></i>Modifier
-                        </a>
-                        <!-- Bouton Supprimer avec Modal -->
-                        <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteModal{{ trade.pk }}" title="Supprimer">
-                            <i class="fas fa-trash-alt"></i> Supprimer
-                        </button>
-                    </td>
-                    
-                    <td>
-                        {% if trade.screenshots.exists %}
-                            {% with screenshots=trade.screenshots.all %}
-                                {% if screenshots %}
-                                    <!-- Lien pour ouvrir le modal avec le carousel -->
-                                    <a href="#" data-toggle="modal" data-target="#imageModal{{ trade.pk }}">
-                                        <img src="{{ screenshots.first.image.url }}" alt="Screenshot" class="img-thumbnail" style="width: 100px; height: auto;">
-                                    </a>
-
-                                    <!-- Modal pour afficher les captures d'écran -->
-                                    <div class="modal fade" id="imageModal{{ trade.pk }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel{{ trade.pk }}" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="imageModalLabel{{ trade.pk }}">Captures d'écran du Trade #{{ trade.id }}</h5>
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
-                                                        <span aria-hidden="true">&times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div id="carousel{{ trade.pk }}" class="carousel slide" data-ride="carousel">
-                                                        <div class="carousel-inner">
-                                                            {% for screenshot in screenshots %}
-                                                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                                                <img src="{{ screenshot.image.url }}" class="d-block w-100" alt="Screenshot">
-                                                            </div>
-                                                            {% endfor %}
-                                                        </div>
-                                                        <a class="carousel-control-prev" href="#carousel{{ trade.pk }}" role="button" data-slide="prev">
-                                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                            <span class="sr-only">Précédent</span>
-                                                        </a>
-                                                        <a class="carousel-control-next" href="#carousel{{ trade.pk }}" role="button" data-slide="next">
-                                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                            <span class="sr-only">Suivant</span>
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
-                        {% else %}
-                            <!-- Bouton pour ajouter une capture d'écran -->
-                            <a href="#" data-toggle="modal" data-target="#addScreenshotModal{{ trade.pk }}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-plus"></i> Ajouter une Capture
-                            </a>
-
-                            <!-- Modal pour ajouter une capture d'écran -->
-                            <div class="modal fade" id="addScreenshotModal{{ trade.pk }}" tabindex="-1" role="dialog" aria-labelledby="addScreenshotModalLabel{{ trade.pk }}" aria-hidden="true">
-                                <div class="modal-dialog" role="document">
-                                    <form method="post" action="{% url 'add_trade_screenshot' trade.pk %}" enctype="multipart/form-data">
-                                        {% csrf_token %}
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="addScreenshotModalLabel{{ trade.pk }}">Ajouter une Capture d'écran</h5>
-                                                <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="form-group">
-                                                    <label for="id_images_{{ trade.pk }}">Choisir une ou plusieurs images</label>
-                                                    <input type="file" name="images" id="id_images_{{ trade.pk }}" class="form-control-file" multiple required>
-                                                </div>
-                                                <small class="text-muted">
-                                                    Maintenez Ctrl (Windows) ou Command (Mac) pour sélectionner plusieurs fichiers.
-                                                </small>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">Télécharger</button>
-                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% for comment in trade.comments.all %}
-                            <p>
-                                <strong>{{ comment.coach.username }}</strong> : 
-                                {{ comment.content }}
-                                <br>
-                                <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
-                            </p>
-                        {% empty %}
-                            <p class="text-muted">Aucun commentaire</p>
-                        {% endfor %}
-                    </td>
-
-                    <td>
-                        {% if trade.note %}
-                            <!-- Afficher la note existante -->
-                            <div class="border p-2 rounded">
-                                {{ trade.note }}
-                            </div>
-                        {% else %}
-                            <!-- Formulaire pour ajouter une note -->
-                            <form method="post" action="{% url 'update_trade_note' trade.pk %}" class="note-form">
-                                {% csrf_token %}
-                                <textarea name="note" class="form-control" rows="2" placeholder="Ajouter une note...">{{ trade.note }}</textarea>
-                                <button type="submit" class="btn btn-sm btn-success mt-1">
-                                    <i class="fas fa-save"></i> Sauvegarder
-                                </button>
-                            </form>
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if trade.strategy %}
-                            <a href="{% url 'strategy_detail' trade.strategy.pk %}" class="text-decoration-none">
-                                {{ trade.strategy.name }}
-                                <i class="fas fa-external-link-alt"></i>
-                            </a>
-                        {% else %}
-                            {% if strategies.exists %}
-                                <form method="post" action="{% url 'update_trade_strategy' trade.pk %}">
-                                    {% csrf_token %}
-                                    <select name="strategy" class="form-control" onchange="this.form.submit()">
-                                        <option value="" selected>-- Sélectionner une stratégie --</option>
-                                        {% for strategy in strategies %}
-                                            <option value="{{ strategy.pk }}">{{ strategy.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </form>
-                            {% else %}
-                                <p>Aucune stratégie disponible</p>
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    
-                    <td>{{ trade.symbol }}</td>
-                    <td>{{ trade.trade_type }}</td>
-                    <td>{{ trade.entry_datetime|date:"d/m/Y H:i" }}</td>
-                    <td>{{ trade.exit_datetime|date:"d/m/Y H:i" }}</td>
-                    <td>{{ trade.entry_price|floatformat:"2" }}</td>
-                    <td>{{ trade.exit_price|floatformat:"2" }}</td>
-                    <td>{{ trade.quantity }}</td>
-                    <td>{{ trade.profit_loss|floatformat:"2" }}</td>
-                    <td>{{ trade.commission|floatformat:"2" }}</td>
-                    <td>{{ trade.duration }}</td>
-
-                </tr>
-
-                <!-- Modal de Confirmation de Suppression pour chaque Trade -->
-                <div class="modal fade" id="deleteModal{{ trade.pk }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ trade.pk }}" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="deleteModalLabel{{ trade.pk }}">Confirmer la Suppression</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                Êtes-vous sûr de vouloir supprimer le trade <strong>#{{ trade.id }}</strong> ?
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                                <a href="{% url 'trade_delete' trade.pk %}" class="btn btn-danger">Supprimer</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="container">
+  <div class="d-flex flex-wrap align-items-center justify-content-between mt-2 mb-3">
+    <h2 class="mb-2">Mes Trades</h2>
+    <div class="d-flex gap-2">
+      <a href="{% url 'import_csv' %}" class="btn btn-outline-primary">Importer des trades</a>
+      <a href="{% url 'trade_new' %}" class="btn btn-primary">Ajouter un trade</a>
     </div>
+  </div>
+
+  <!-- Filtres -->
+  <form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-sm-4 col-md-3">
+      <label for="start_date" class="form-label">Du</label>
+      <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+    </div>
+    <div class="col-12 col-sm-4 col-md-3">
+      <label for="end_date" class="form-label">Au</label>
+      <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
+    </div>
+    <div class="col-12 col-sm-4 col-md-6 d-flex gap-2">
+      <button type="submit" class="btn btn-secondary flex-fill">Filtrer</button>
+      <a href="{% url 'trade_list' %}" class="btn btn-outline-secondary">Réinitialiser</a>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Actions</th>
+          <th>Capture</th>
+          <th>Commentaires du coach</th>
+          <th>Notes</th>
+          <th>Stratégie</th>
+          <th>Symbole</th>
+          <th>Type</th>
+          <th>Entrée</th>
+          <th>Sortie</th>
+          <th class="text-end">Prix entrée</th>
+          <th class="text-end">Prix sortie</th>
+          <th class="text-end">Quantité</th>
+          <th class="text-end">P/L</th>
+          <th class="text-end">Commission</th>
+          <th>Durée</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for trade in trades %}
+        <tr>
+          <!-- Actions -->
+          <td class="text-nowrap">
+            <a href="{% url 'trade_detail' trade.pk %}" class="btn btn-outline-secondary btn-sm">Voir</a>
+            <a href="{% url 'trade_edit' trade.pk %}" class="btn btn-outline-warning btn-sm">Modifier</a>
+            <button
+              type="button"
+              class="btn btn-outline-danger btn-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#confirmDeleteModal"
+              data-delete-url="{% url 'trade_delete' trade.pk %}"
+              data-trade-label="#{{ trade.id }} {{ trade.symbol }}"
+            >Supprimer</button>
+          </td>
+
+          <!-- Captures -->
+          <td class="text-nowrap">
+            {% with sc=trade.screenshots.all %}
+              {% if sc|length %}
+                <button
+                  type="button"
+                  class="btn btn-outline-primary btn-sm"
+                  data-bs-toggle="modal"
+                  data-bs-target="#screensModal"
+                  data-images='[{% for s in sc %}{"url":"{{ s.image.url|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'
+                  data-title="Captures – Trade #{{ trade.id }}"
+                >
+                  Voir ({{ sc|length }})
+                </button>
+              {% endif %}
+            {% endwith %}
+
+            <!-- Ajouter des captures (toujours disponible) -->
+            <button
+              type="button"
+              class="btn btn-outline-success btn-sm ms-1"
+              data-bs-toggle="modal"
+              data-bs-target="#addScreenshotModal"
+              data-upload-url="{% url 'add_trade_screenshot' trade.pk %}"
+            >Ajouter</button>
+          </td>
+
+          <!-- Commentaires -->
+          <td style="min-width:220px;">
+            {% for comment in trade.comments.all %}
+              <div class="small mb-2">
+                <strong>{{ comment.coach.username }}</strong> — <span class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</span><br>
+                {{ comment.content }}
+              </div>
+            {% empty %}
+              <span class="text-muted">Aucun</span>
+            {% endfor %}
+          </td>
+
+          <!-- Notes -->
+          <td style="min-width:220px;">
+            {% if trade.note %}
+              <div class="border rounded p-2 small">{{ trade.note }}</div>
+            {% else %}
+              <form method="post" action="{% url 'update_trade_note' trade.pk %}" class="note-form">
+                {% csrf_token %}
+                <textarea name="note" class="form-control form-control-sm" rows="2" placeholder="Ajouter une note..."></textarea>
+                <div class="d-flex justify-content-end mt-1">
+                  <button type="submit" class="btn btn-success btn-sm">Sauvegarder</button>
+                </div>
+              </form>
+            {% endif %}
+          </td>
+
+          <!-- Stratégie -->
+          <td class="text-nowrap">
+            {% if trade.strategy %}
+              <a href="{% url 'strategy_detail' trade.strategy.pk %}" class="text-decoration-none">
+                {{ trade.strategy.name }}
+              </a>
+            {% else %}
+              {% if strategies %}
+                <form method="post" action="{% url 'update_trade_strategy' trade.pk %}">
+                  {% csrf_token %}
+                  <select name="strategy" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="" selected>— Choisir —</option>
+                    {% for strategy in strategies %}
+                      <option value="{{ strategy.pk }}">{{ strategy.name }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              {% else %}
+                <span class="text-muted">Aucune</span>
+              {% endif %}
+            {% endif %}
+          </td>
+
+          <td>{{ trade.symbol }}</td>
+          <td>
+            {% if trade.trade_type == 'LONG' %}
+              <span class="badge text-bg-success">Long</span>
+            {% elif trade.trade_type == 'SHORT' %}
+              <span class="badge text-bg-danger">Short</span>
+            {% else %}
+              <span class="badge text-bg-secondary">{{ trade.trade_type }}</span>
+            {% endif %}
+          </td>
+          <td class="text-nowrap">{{ trade.entry_datetime|date:"d/m/Y H:i" }}</td>
+          <td class="text-nowrap">{{ trade.exit_datetime|date:"d/m/Y H:i" }}</td>
+          <td class="text-end">{{ trade.entry_price|floatformat:2|intcomma }}</td>
+          <td class="text-end">{{ trade.exit_price|default_if_none:''|floatformat:2|intcomma }}</td>
+          <td class="text-end">{{ trade.quantity|floatformat:2|intcomma }}</td>
+          <td class="text-end">
+            {% if trade.profit_loss > 0 %}
+              <span class="text-success fw-semibold">+{{ trade.profit_loss|floatformat:2|intcomma }}</span>
+            {% elif trade.profit_loss < 0 %}
+              <span class="text-danger fw-semibold">{{ trade.profit_loss|floatformat:2|intcomma }}</span>
+            {% else %}
+              {{ trade.profit_loss|floatformat:2|intcomma }}
+            {% endif %}
+          </td>
+          <td class="text-end">{{ trade.commission|floatformat:2|intcomma }}</td>
+          <td class="text-nowrap">{{ trade.duration }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="15" class="text-center text-muted py-4">Aucun trade trouvé.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if trades.paginator.num_pages > 1 %}
+    <nav aria-label="Pagination">
+      <ul class="pagination justify-content-center">
+        {% if trades.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ trades.previous_page_number }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Précédent">&laquo;</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        {% endif %}
+
+        {% for num in trades.paginator.page_range %}
+          {% if num == trades.number %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% elif num > trades.number|add:-3 and num < trades.number|add:3 %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ num }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        {% if trades.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ trades.next_page_number }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Suivant">&raquo;</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+</div>
+
+<!-- Modal unique : confirmation suppression -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteLabel">Confirmer la suppression</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        Êtes-vous sûr de vouloir supprimer <strong id="deleteTradeLabel">ce trade</strong> ?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <a id="deleteConfirmBtn" href="#" class="btn btn-danger">Supprimer</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal unique : carousel screenshots -->
+<div class="modal fade" id="screensModal" tabindex="-1" aria-labelledby="screensLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="screensLabel">Captures</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <div id="screensCarousel" class="carousel slide" data-bs-ride="false">
+          <div class="carousel-inner" id="screensCarouselInner"><!-- items injectés via JS --></div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#screensCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Précédent</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#screensCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Suivant</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal unique : ajout de captures -->
+<div class="modal fade" id="addScreenshotModal" tabindex="-1" aria-labelledby="addScreenshotLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" enctype="multipart/form-data" id="addScreenshotForm">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addScreenshotLabel">Ajouter des captures</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          <label for="id_images" class="form-label">Choisir une ou plusieurs images</label>
+          <input type="file" name="images" id="id_images" class="form-control" accept="image/*" multiple required>
+          <div class="form-text">Ctrl (Windows) / Cmd (Mac) pour multi-sélection.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Télécharger</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast (feedback AJAX) -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+  <div id="toastFeedback" class="toast align-items-center text-bg-primary border-0" role="status" aria-live="polite" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">Action effectuée.</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fermer"></button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Cible tous les formulaires de note
-        const noteForms = document.querySelectorAll('.note-form');
-
-        noteForms.forEach(function(form) {
-            form.addEventListener('submit', function(event) {
-                event.preventDefault(); // Empêche la soumission par défaut
-
-                const formData = new FormData(form);
-                const url = form.getAttribute('action');
-
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest', // Indique une requête AJAX
-                        'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.status === 'success') {
-                        // Affiche un message de succès
-                        alert(data.message);
-                        // Actualise la page pour afficher la nouvelle note
-                        location.reload(); // Recharge la page pour afficher la nouvelle note
-                    } else {
-                        // Affiche un message d'erreur
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Erreur:', error);
-                    alert('Une erreur est survenue lors de la mise à jour de la note.');
-                });
-            });
-        });
+(function(){
+  // Confirm delete modal: injecte l'URL et le label
+  const confirmModal = document.getElementById('confirmDeleteModal');
+  if (confirmModal) {
+    confirmModal.addEventListener('show.bs.modal', function (event) {
+      const btn = event.relatedTarget;
+      const url = btn.getAttribute('data-delete-url');
+      const label = btn.getAttribute('data-trade-label') || 'ce trade';
+      confirmModal.querySelector('#deleteConfirmBtn').setAttribute('href', url);
+      confirmModal.querySelector('#deleteTradeLabel').textContent = label;
     });
+  }
+
+  // Screens modal: injecte dynamiquement les items du carousel
+  const screensModal = document.getElementById('screensModal');
+  const carouselInner = document.getElementById('screensCarouselInner');
+  if (screensModal && carouselInner) {
+    screensModal.addEventListener('show.bs.modal', function (event) {
+      const btn = event.relatedTarget;
+      const imagesJson = btn.getAttribute('data-images') || '[]';
+      const title = btn.getAttribute('data-title') || 'Captures';
+      let imgs = [];
+      try { imgs = JSON.parse(imagesJson); } catch (_) {}
+      screensModal.querySelector('#screensLabel').textContent = title;
+      carouselInner.innerHTML = '';
+      if (!imgs.length) {
+        carouselInner.innerHTML = '<div class="text-muted">Aucune image</div>';
+        return;
+      }
+      imgs.forEach((o, i) => {
+        const item = document.createElement('div');
+        item.className = 'carousel-item' + (i === 0 ? ' active' : '');
+        item.innerHTML = `<img src="${o.url}" class="d-block w-100" alt="Screenshot ${i+1}">`;
+        carouselInner.appendChild(item);
+      });
+    });
+  }
+
+  // Modal "Ajouter captures": met à jour l'action du formulaire
+  const addModal = document.getElementById('addScreenshotModal');
+  const addForm = document.getElementById('addScreenshotForm');
+  if (addModal && addForm) {
+    addModal.addEventListener('show.bs.modal', function (event) {
+      const btn = event.relatedTarget;
+      const url = btn.getAttribute('data-upload-url');
+      addForm.setAttribute('action', url);
+    });
+  }
+
+  // Notes AJAX -> Toast feedback
+  function showToast(msg, ok=true){
+    const t = document.getElementById('toastFeedback');
+    const body = document.getElementById('toastBody');
+    if (!t || !body) return;
+    body.textContent = msg || (ok ? 'Action effectuée.' : 'Erreur.');
+    t.classList.remove('text-bg-primary','text-bg-danger');
+    t.classList.add(ok ? 'text-bg-primary' : 'text-bg-danger');
+    const toast = bootstrap.Toast.getOrCreateInstance(t, { delay: 2500 });
+    toast.show();
+  }
+
+  document.querySelectorAll('.note-form').forEach((form) => {
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      const url = form.getAttribute('action');
+      const fd = new FormData(form);
+      fetch(url, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd
+      }).then(r => r.json())
+       .then(data => {
+          if (data.status === 'success') {
+            showToast(data.message || 'Note ajoutée.');
+            // Recharge pour afficher la note
+            setTimeout(() => window.location.reload(), 600);
+          } else {
+            showToast(data.message || "Erreur lors de l'ajout de la note.", false);
+          }
+       })
+       .catch(() => showToast("Erreur réseau.", false));
+    });
+  });
+})();
 </script>
 {% endblock %}

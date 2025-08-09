@@ -1,63 +1,207 @@
 <!-- trades/templates/trades/trade_detail.html -->
 {% extends 'trades/base.html' %}
+{% load humanize %}
 
 {% block title %}Détails du Trade{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">Détails du Trade</h2>
-    <div class="card mb-3">
-        <div class="card-header">
-            <strong>Stratégie :</strong>
-            {% if trade.strategy %}
-                <a href="{% url 'strategy_detail' trade.strategy.pk %}" class="text-decoration-none">
-                    {{ trade.strategy.name }}
-                    <i class="fas fa-external-link-alt"></i>
-                </a>
-            {% else %}
-                <span class="text-muted">Aucune Stratégie Associée</span>
-            {% endif %}
-        </div>
-        <div class="card-body">
-            <p><strong>Date d'entrée :</strong> {{ trade.entry_datetime|date:"d/m/Y H:i" }}</p>
-            <p><strong>Date de sortie :</strong> {{ trade.exit_datetime|date:"d/m/Y H:i" }}</p>
-            <p><strong>Prix d'entrée :</strong> {{ trade.entry_price|floatformat:"2" }}</p>
-            <p><strong>Prix de sortie :</strong> {{ trade.exit_price|floatformat:"2" }}</p>
-            <p><strong>Notes :</strong> {{ trade.note|truncatewords:10 }}</p>
-            <p><strong>Captures d'écran :</strong></p>
-            {% if trade.screenshots.all %}
-                <div class="row">
-                    {% for screenshot in trade.screenshots.all %}
-                        <div class="col-md-3 mb-2">
-                            <a href="{{ screenshot.image.url }}" data-toggle="lightbox" data-gallery="trade-gallery{{ trade.pk }}">
-                                <img src="{{ screenshot.image.url }}" alt="Screenshot" class="img-thumbnail">
-                            </a>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p>Aucune capture d'écran disponible.</p>
-            {% endif %}
-        </div>
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'trade_list' %}">Trades</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Détails</li>
+    </ol>
+  </nav>
+
+  <div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        <h2 class="h5 mb-0">{{ trade.symbol }}</h2>
+        {% if trade.trade_type == 'LONG' %}
+          <span class="badge text-bg-success">Long</span>
+        {% elif trade.trade_type == 'SHORT' %}
+          <span class="badge text-bg-danger">Short</span>
+        {% else %}
+          <span class="badge text-bg-secondary">{{ trade.trade_type }}</span>
+        {% endif %}
+      </div>
+
+      <div class="text-end">
+        <small class="text-muted">#{{ trade.id }}</small>
+      </div>
     </div>
 
-    {% if can_edit_delete %}
-        <a href="{% url 'trade_edit' trade.pk %}" class="btn btn-warning">
-            <i class="fas fa-edit"></i> Modifier
-        </a>
-        <a href="{% url 'trade_delete' trade.pk %}" class="btn btn-danger">
-            <i class="fas fa-trash-alt"></i> Supprimer
-        </a>
-    {% endif %}
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <div class="mb-1 text-muted small">Stratégie</div>
+          {% if trade.strategy %}
+            <a href="{% url 'strategy_detail' trade.strategy.pk %}" class="text-decoration-none">
+              {{ trade.strategy.name }}
+            </a>
+          {% else %}
+            <span class="text-muted">Aucune stratégie associée</span>
+          {% endif %}
+        </div>
 
-    {% if student_id %}
-        <a href="{% url 'coach_student_trades' student_id %}" class="btn btn-info ml-2">
-            <i class="fas fa-arrow-left"></i> Retour aux trades de l'élève
-        </a>
-    {% else %}
-        <a href="{% url 'trade_list' %}" class="btn btn-secondary ml-2">
-            <i class="fas fa-arrow-left"></i> Retour à la liste
-        </a>
-    {% endif %}
+        <div class="col-6 col-md-3">
+          <div class="mb-1 text-muted small">Entrée</div>
+          <div class="fw-medium">{{ trade.entry_datetime|date:"d/m/Y H:i" }}</div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="mb-1 text-muted small">Sortie</div>
+          <div class="fw-medium">{{ trade.exit_datetime|date:"d/m/Y H:i" }}</div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="mb-1 text-muted small">Prix d'entrée</div>
+          <div class="fw-medium text-end">{{ trade.entry_price|floatformat:2|intcomma }}</div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="mb-1 text-muted small">Prix de sortie</div>
+          <div class="fw-medium text-end">{{ trade.exit_price|default_if_none:''|floatformat:2|intcomma }}</div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="mb-1 text-muted small">Quantité</div>
+          <div class="fw-medium text-end">{{ trade.quantity|floatformat:2|intcomma }}</div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="mb-1 text-muted small">Commission</div>
+          <div class="fw-medium text-end">{{ trade.commission|floatformat:2|intcomma }}</div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="mb-1 text-muted small">Durée</div>
+          <div class="fw-medium">{{ trade.duration }}</div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="mb-1 text-muted small">Profit / Perte</div>
+          <div class="fw-bold text-end">
+            {% if trade.profit_loss > 0 %}
+              <span class="text-success">+{{ trade.profit_loss|floatformat:2|intcomma }}</span>
+            {% elif trade.profit_loss < 0 %}
+              <span class="text-danger">{{ trade.profit_loss|floatformat:2|intcomma }}</span>
+            {% else %}
+              {{ trade.profit_loss|floatformat:2|intcomma }}
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="mb-1 text-muted small">Note</div>
+          {% if trade.note %}
+            <div class="border rounded p-2">{{ trade.note }}</div>
+          {% else %}
+            <span class="text-muted">Aucune note</span>
+          {% endif %}
+        </div>
+
+        <div class="col-12">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="mb-1 text-muted small">Captures d'écran</div>
+            </div>
+            {% with sc=trade.screenshots.all %}
+              {% if sc|length %}
+                <button
+                  type="button"
+                  class="btn btn-outline-primary btn-sm"
+                  data-bs-toggle="modal"
+                  data-bs-target="#screensModal"
+                >Voir les captures ({{ sc|length }})</button>
+              {% endif %}
+            {% endwith %}
+          </div>
+
+          {% with sc=trade.screenshots.all %}
+            {% if sc|length %}
+              <!-- Aperçu vignettes -->
+              <div class="row g-2 mt-1">
+                {% for s in sc|slice:":6" %}
+                  <div class="col-4 col-md-2">
+                    <img src="{{ s.image.url }}" class="img-fluid rounded border" alt="Screenshot {{ forloop.counter }}">
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-muted">Aucune capture d'écran disponible.</div>
+            {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card-footer d-flex flex-wrap gap-2">
+      {% if can_edit_delete %}
+        <a href="{% url 'trade_edit' trade.pk %}" class="btn btn-warning">Modifier</a>
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">Supprimer</button>
+      {% endif %}
+
+      {% if student_id %}
+        <a href="{% url 'coach_student_trades' student_id %}" class="btn btn-outline-secondary ms-auto">Retour aux trades de l'élève</a>
+      {% else %}
+        <a href="{% url 'trade_list' %}" class="btn btn-outline-secondary ms-auto">Retour à la liste</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# Modal: Carousel des captures #}
+{% with sc=trade.screenshots.all %}
+{% if sc|length %}
+<div class="modal fade" id="screensModal" tabindex="-1" aria-labelledby="screensLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="screensLabel">Captures – Trade #{{ trade.id }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <div id="screensCarousel" class="carousel slide" data-bs-ride="false">
+          <div class="carousel-inner">
+            {% for s in sc %}
+              <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                <img src="{{ s.image.url }}" class="d-block w-100" alt="Screenshot {{ forloop.counter }}">
+              </div>
+            {% endfor %}
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#screensCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Précédent</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#screensCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Suivant</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endwith %}
+
+{# Modal: confirmation suppression #}
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteLabel">Confirmer la suppression</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        Êtes-vous sûr de vouloir supprimer <strong>#{{ trade.id }} {{ trade.symbol }}</strong> ?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <a href="{% url 'trade_delete' trade.pk %}" class="btn btn-danger">Supprimer</a>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

@@ -2,53 +2,197 @@
 {% extends 'trades/base.html' %}
 
 {% block title %}
-    {% if form.instance.pk %}
-        Modifier le Trade
-    {% else %}
-        Nouveau Trade
-    {% endif %}
+  {% if form.instance.pk %}Modifier le Trade{% else %}Nouveau Trade{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">
-        {% if form.instance.pk %}
-            Modifier le Trade
-        {% else %}
-            Nouveau Trade
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'trade_list' %}">Trades</a></li>
+      <li class="breadcrumb-item active" aria-current="page">
+        {% if form.instance.pk %}Modifier{% else %}Nouveau{% endif %}
+      </li>
+    </ol>
+  </nav>
+
+  <h2 class="mb-3">{% if form.instance.pk %}Modifier le Trade{% else %}Nouveau Trade{% endif %}</h2>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+      {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+    {% csrf_token %}
+
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <label for="{{ form.strategy.id_for_label }}" class="form-label">Stratégie</label>
+        {{ form.strategy }}
+        {% if form.strategy.errors %}
+          <div class="invalid-feedback d-block">
+            {% for e in form.strategy.errors %}{{ e }}{% endfor %}
+          </div>
         {% endif %}
-    </h2>
+      </div>
 
-    {% if form.errors %}
-        <div class="alert alert-danger">
-            <strong>Veuillez corriger les erreurs ci-dessous :</strong>
-            {{ form.errors }}
-        </div>
-    {% endif %}
+      <div class="col-6 col-md-3">
+        <label for="{{ form.symbol.id_for_label }}" class="form-label">Symbole</label>
+        {{ form.symbol }}
+        {% if form.symbol.errors %}
+          <div class="invalid-feedback d-block">
+            {% for e in form.symbol.errors %}{{ e }}{% endfor %}
+          </div>
+        {% endif %}
+      </div>
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <div class="form-group">
-            <label for="id_screenshots">Ajouter des captures d'écran :</label>
-            <small class="form-text text-muted">
-                Maintenez Ctrl (Windows) ou Command (Mac) pour sélectionner plusieurs fichiers.
-            </small>
-            <input type="file" name="screenshots" id="id_screenshots" multiple>
-        </div>
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
-        <a href="{% url 'trade_list' %}" class="btn btn-secondary">Annuler</a>
-    </form>
+      <div class="col-6 col-md-3">
+        <label for="{{ form.trade_type.id_for_label }}" class="form-label">Type</label>
+        {{ form.trade_type }}
+        {% if form.trade_type.errors %}
+          <div class="invalid-feedback d-block">
+            {% for e in form.trade_type.errors %}{{ e }}{% endfor %}
+          </div>
+        {% endif %}
+      </div>
 
-    {% if trade.screenshots.all %}
-        <h3 class="mt-5">Captures d'écran existantes</h3>
-        <div class="row">
-            {% for screenshot in trade.screenshots.all %}
-                <div class="col-md-3 mb-3">
-                    <img src="{{ screenshot.image.url }}" alt="Screenshot" class="img-thumbnail">
-                </div>
-            {% endfor %}
+      <div class="col-12 col-md-6">
+        <label for="{{ form.entry_datetime.id_for_label }}" class="form-label">Date/heure d'entrée</label>
+        {{ form.entry_datetime }}
+        {% if form.entry_datetime.errors %}
+          <div class="invalid-feedback d-block">
+            {% for e in form.entry_datetime.errors %}{{ e }}{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label for="{{ form.exit_datetime.id_for_label }}" class="form-label">Date/heure de sortie</label>
+        {{ form.exit_datetime }}
+        {% if form.exit_datetime.errors %}
+          <div class="invalid-feedback d-block">
+            {% for e in form.exit_datetime.errors %}{{ e }}{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="col-6 col-md-3">
+        <label for="{{ form.entry_price.id_for_label }}" class="form-label">Prix d'entrée</label>
+        {{ form.entry_price }}
+        {% if form.entry_price.errors %}
+          <div class="invalid-feedback d-block">
+            {% for e in form.entry_price.errors %}{{ e }}{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="col-6 col-md-3">
+        <label for="{{ form.exit_price.id_for_label }}" class="form-label">Prix de sortie</label>
+        {{ form.exit_price }}
+        {% if form.exit_price.errors %}
+          <div class="invalid-feedback d-block">
+            {% for e in form.exit_price.errors %}{{ e }}{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="col-6 col-md-3">
+        <label for="{{ form.quantity.id_for_label }}" class="form-label">Quantité</label>
+        {{ form.quantity }}
+        {% if form.quantity.errors %}
+          <div class="invalid-feedback d-block">
+            {% for e in form.quantity.errors %}{{ e }}{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="col-6 col-md-3">
+        <label for="{{ form.commission.id_for_label }}" class="form-label">Commission</label>
+        {{ form.commission }}
+        {% if form.commission.errors %}
+          <div class="invalid-feedback d-block">
+            {% for e in form.commission.errors %}{{ e }}{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="col-12">
+        <label for="{{ form.note.id_for_label }}" class="form-label">Note</label>
+        {{ form.note }}
+        {% if form.note.errors %}
+          <div class="invalid-feedback d-block">
+            {% for e in form.note.errors %}{{ e }}{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Upload multi-screenshots -->
+      <div class="col-12">
+        <label for="id_screenshots" class="form-label">Ajouter des captures d'écran</label>
+        <input type="file" name="screenshots" id="id_screenshots" class="form-control" accept="image/*" multiple>
+        <div class="form-text">Ctrl (Windows) / Cmd (Mac) pour sélectionner plusieurs fichiers.</div>
+        <div id="previews" class="d-flex flex-wrap gap-2 mt-2"></div>
+      </div>
+
+      <div class="col-12 d-flex gap-2 mt-2">
+        <button id="submitBtn" type="submit" class="btn btn-primary">Enregistrer</button>
+        <a href="{% url 'trade_list' %}" class="btn btn-outline-secondary">Annuler</a>
+      </div>
+    </div>
+  </form>
+
+  {% if trade %}
+    {% with sc=trade.screenshots.all %}
+      {% if sc %}
+        <h3 class="mt-5 h5">Captures d'écran existantes</h3>
+        <div class="row g-3">
+          {% for screenshot in sc %}
+            <div class="col-6 col-md-3">
+              <a href="{{ screenshot.image.url }}" target="_blank" class="d-block">
+                <img src="{{ screenshot.image.url }}" class="img-fluid rounded border" alt="Screenshot {{ forloop.counter }}">
+              </a>
+            </div>
+          {% endfor %}
         </div>
-    {% endif %}
+      {% endif %}
+    {% endwith %}
+  {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function(){
+    // Prévisualisation des images sélectionnées
+    const input = document.getElementById('id_screenshots');
+    const previews = document.getElementById('previews');
+    if (input && previews) {
+      input.addEventListener('change', function(){
+        previews.innerHTML = '';
+        const files = Array.from(input.files || []);
+        files.forEach(file => {
+          if (!file.type.startsWith('image/')) return;
+          const url = URL.createObjectURL(file);
+          const img = document.createElement('img');
+          img.src = url;
+          img.className = 'img-thumbnail';
+          img.style.height = '90px';
+          img.onload = () => URL.revokeObjectURL(url);
+          previews.appendChild(img);
+        });
+      });
+    }
+
+    // Empêcher double submit
+    const form = document.querySelector('form.needs-validation');
+    const submitBtn = document.getElementById('submitBtn');
+    if (form && submitBtn) {
+      form.addEventListener('submit', function(){
+        submitBtn.disabled = true;
+      });
+    }
+  })();
+</script>
 {% endblock %}

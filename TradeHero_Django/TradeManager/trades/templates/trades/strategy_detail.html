@@ -4,52 +4,101 @@
 {% block title %}Détails de la Stratégie{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">Détails de la Stratégie</h2>
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'strategy_list' %}">Stratégies</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Détails</li>
+    </ol>
+  </nav>
 
-    <div class="card mb-3">
-        <div class="card-header bg-primary text-white">
-            <strong>Nom :</strong> {{ strategy.name }}
-        </div>
-        <div class="card-body">
-            <p><strong>Description :</strong><br>{{ strategy.description|linebreaks }}</p>
-            <hr>
-            <p><strong>Captures d'écran :</strong></p>
-            {% if strategy.screenshots.exists %}
-                <div class="row">
-                    {% for screenshot in strategy.screenshots.all %}
-                        <div class="col-md-3 mb-2">
-                            <a href="{{ screenshot.image.url }}" data-toggle="lightbox" data-gallery="strategy-gallery{{ strategy.pk }}">
-                                <img src="{{ screenshot.image.url }}" alt="Screenshot" class="img-thumbnail">
-                            </a>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-muted">Aucune capture d'écran disponible.</p>
-            {% endif %}
-        </div>
+  <div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">{{ strategy.name }}</h2>
+      <div class="d-flex gap-2">
+        {% if can_edit_delete %}
+          <a href="{% url 'strategy_edit' strategy.pk %}" class="btn btn-warning btn-sm">Modifier</a>
+          <a href="{% url 'strategy_delete' strategy.pk %}" class="btn btn-danger btn-sm">Supprimer</a>
+        {% endif %}
+        {% if student_id %}
+          <a href="{% url 'coach_student_trades' student_id %}" class="btn btn-outline-secondary btn-sm">Retour liste trade élève</a>
+        {% else %}
+          <a href="{% url 'strategy_list' %}" class="btn btn-outline-secondary btn-sm">Retour</a>
+        {% endif %}
+      </div>
     </div>
 
-    <!-- Boutons d'action -->
-    {% if can_edit_delete %}
-        <a href="{% url 'strategy_edit' strategy.pk %}" class="btn btn-warning">
-            <i class="fas fa-edit"></i> Modifier
-        </a>
-        <a href="{% url 'strategy_delete' strategy.pk %}" class="btn btn-danger">
-            <i class="fas fa-trash-alt"></i> Supprimer
-        </a>
-    {% endif %}
+    <div class="card-body">
+      <div class="mb-3">
+        <div class="text-muted small mb-1">Description</div>
+        <div class="border rounded p-2">{{ strategy.description|linebreaks }}</div>
+      </div>
 
-    <!-- Bouton de retour vers la liste des trades de l'élève si coach -->
-    {% if student_id %}
-        <a href="{% url 'coach_student_trades' student_id %}" class="btn btn-info ml-2">
-            <i class="fas fa-arrow-left"></i> Retour aux trades de l'élève
-        </a>
-    {% else %}
-        <a href="{% url 'strategy_list' %}" class="btn btn-secondary ml-2">
-            <i class="fas fa-arrow-left"></i> Retour à la liste
-        </a>
-    {% endif %}
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="text-muted small">Captures d’écran</div>
+        {% with sc=strategy.screenshots.all %}
+          {% if sc|length %}
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#screensModal"
+            >
+              Voir ({{ sc|length }})
+            </button>
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      {% with sc=strategy.screenshots.all %}
+        {% if sc|length %}
+          <div class="row g-2 mt-1">
+            {% for s in sc|slice:":8" %}
+              <div class="col-6 col-sm-4 col-md-3">
+                <img src="{{ s.image.url }}" class="img-fluid rounded border" alt="Screenshot {{ forloop.counter }}">
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-muted">Aucune capture d’écran disponible.</div>
+        {% endif %}
+      {% endwith %}
+    </div>
+  </div>
 </div>
+
+{# Modal: carousel des captures (si présent) #}
+{% with sc=strategy.screenshots.all %}
+{% if sc|length %}
+<div class="modal fade" id="screensModal" tabindex="-1" aria-labelledby="screensLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="screensLabel">Captures – {{ strategy.name }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <div id="screensCarousel" class="carousel slide" data-bs-ride="false">
+          <div class="carousel-inner">
+            {% for s in sc %}
+              <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                <img src="{{ s.image.url }}" class="d-block w-100" alt="Screenshot {{ forloop.counter }}">
+              </div>
+            {% endfor %}
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#screensCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Précédent</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#screensCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Suivant</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endwith %}
 {% endblock %}

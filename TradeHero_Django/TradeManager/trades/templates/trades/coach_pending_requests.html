@@ -1,28 +1,64 @@
 <!-- trades/templates/trades/coach_pending_requests.html -->
 {% extends 'trades/base.html' %}
 
+{% block title %}Demandes en attente{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-3">Demandes en attente</h2>
-    {% if requests_list %}
-        <ul class="list-group">
-            {% for req in requests_list %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>
-                        <strong>{{ req.student.username }}</strong> souhaite devenir votre élève.
-                    </span>
-                    <form method="post" action="{% url 'coach_respond_request' req.pk %}" class="mb-0">
-                        {% csrf_token %}
-                        <button type="submit" name="accept" class="btn btn-success btn-sm mr-2">Accepter</button>
-                        <button type="submit" name="refuse" class="btn btn-danger btn-sm">Refuser</button>
-                    </form>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <div class="alert alert-info mt-3">
-            Aucune demande en attente.
-        </div>
-    {% endif %}
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}">Accueil</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Demandes en attente</li>
+    </ol>
+  </nav>
+
+  <h2 class="mb-3">Demandes en attente</h2>
+
+  {% if requests_list %}
+    <ul class="list-group shadow-sm">
+      {% for req in requests_list %}
+        <li class="list-group-item d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-body-secondary d-inline-flex align-items-center justify-content-center" style="width:40px; height:40px;">
+              <span class="small">{{ req.student.username|slice:":2"|upper }}</span>
+            </div>
+            <div>
+              <div><strong>{{ req.student.username }}</strong> souhaite devenir votre élève.</div>
+              <div class="text-muted small">Demande du {{ req.created_at|date:"d/m/Y H:i" }}</div>
+            </div>
+          </div>
+
+          <form method="post" action="{% url 'coach_respond_request' req.pk %}" class="mb-0 d-flex gap-2 respond-form">
+            {% csrf_token %}
+            <button type="submit" name="accept" class="btn btn-success btn-sm">Accepter</button>
+            <button type="submit" name="refuse" class="btn btn-outline-danger btn-sm btn-refuse">Refuser</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="alert alert-info mt-3 mb-0" role="alert">
+      Aucune demande en attente.
+    </div>
+  {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function(){
+    // Empêcher double-submit et ajouter une confirmation pour "Refuser"
+    document.querySelectorAll('.respond-form').forEach(form => {
+      form.addEventListener('submit', function(e){
+        const clicked = e.submitter; // bouton réellement cliqué
+        if (clicked && clicked.name === 'refuse') {
+          const ok = confirm('Confirmer le refus de cette demande ?');
+          if (!ok) { e.preventDefault(); return; }
+        }
+        // Désactive les boutons pour éviter les doubles clics
+        form.querySelectorAll('button').forEach(b => b.disabled = true);
+      });
+    });
+  })();
+</script>
 {% endblock %}

@@ -1,22 +1,57 @@
 # trades/signals.py
+from __future__ import annotations
 
-from django.db.models.signals import post_save
+from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save, post_migrate
 from django.dispatch import receiver
-from django.contrib.auth.models import User
+from django.db import IntegrityError, transaction
+
 from .models import Profile
 
-@receiver(post_save, sender=User)
-def create_or_update_user_profile(sender, instance, created, **kwargs):
+User = get_user_model()
+
+
+@receiver(post_save, sender=User, dispatch_uid="trades_profile_create_update")
+def create_or_update_user_profile(sender, instance: User, created: bool, **kwargs):
     """
-    Dès qu'un User est créé ou mis à jour, on crée/MAJ automatiquement le Profile.
+    À la création d'un User -> créer un Profile.
+    À la mise à jour -> s'assurer qu'un Profile existe.
     """
     if created:
-        # Nouveau user => on crée le profil
-        Profile.objects.create(user=instance)
+        # get_or_create à l'intérieur d'une transaction pour éviter les courses
+        try:
+            with transaction.atomic():
+                Profile.objects.get_or_create(user=instance)
+        except IntegrityError:
+            # Profil déjà créé par un autre handler/process -> ignorer
+            pass
+        return
+
+    # Sur update, on ne crée pas d'écriture inutile si le profil n'existe pas.
+    if hasattr(instance, "profile"):
+        # Sauvegarde légère (déclenche les signaux éventuels liés au profil)
+        instance.profile.save(update_fields=None)
     else:
-        # User existant => on s'assure de sauver son profil s'il existe
-        if hasattr(instance, 'profile'):
-            instance.profile.save()
-        else:
-            # Optionnel : on crée le profil si jamais il n’existe pas
-            Profile.objects.create(user=instance)
+        try:
+            with transaction.atomic():
+                Profile.objects.get_or_create(user=instance)
+        except IntegrityError:
+            pass
+
+
+@receiver(post_migrate, dispatch_uid="trades_profile_backfill_after_migrate")
+def ensure_profiles_exist(sender, **kwargs):
+    """
+    Après les migrations, créer les profils manquants (backfill idempotent).
+    Utile si des Users existaient avant l'ajout du modèle Profile ou des signaux.
+    """
+    # Évite d'exécuter ce backfill lors des migrations d'autres apps
+    app_config = kwargs.get("app_config")
+    if not app_config or app_config.name != "trades":
+        return
+
+    # Crée les profils manquants en une seule passe
+    users_without_profile = User.objects.filter(profile__isnull=True).only("id")
+    to_create = [Profile(user=u) for u in users_without_profile]
+    if to_create:
+        Profile.objects.bulk_create(to_create, ignore_conflicts=True)

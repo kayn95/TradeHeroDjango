@@ -4,34 +4,97 @@
 {% block title %}Mes Élèves{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">Mes Élèves</h2>
-    <p class="text-muted">Retrouvez ici la liste des élèves qui vous ont choisi comme coach.</p>
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Élève</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for student in students %}
-                <tr>
-                    <td>{{ student.username }}</td>
-                    <td>
-                        <a href="{% url 'coach_student_trades' student.pk %}" class="btn btn-primary btn-sm">
-                            Voir ses Trades
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="2">Vous n'avez pas encore d'élèves.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}">Accueil</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Mes élèves</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex flex-wrap align-items-end justify-content-between mb-3">
+    <div>
+      <h2 class="mb-1">Mes élèves</h2>
+      <p class="text-muted mb-0">Retrouvez la liste des élèves qui vous ont choisi comme coach.</p>
     </div>
+    <div class="text-end mt-2 mt-sm-0">
+      <span class="badge text-bg-primary fs-6">{{ students|length }}</span>
+    </div>
+  </div>
+
+  {% if students %}
+    <div class="row g-2 align-items-end mb-3">
+      <div class="col-12 col-sm-8 col-md-6">
+        <label for="studentSearch" class="form-label">Rechercher</label>
+        <input type="search" id="studentSearch" class="form-control" placeholder="Nom d’utilisateur…">
+        <div class="form-text">Tapez pour filtrer la liste (client-side).</div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle" id="studentsTable">
+        <thead class="table-light">
+          <tr>
+            <th>Élève</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-body-secondary d-inline-flex align-items-center justify-content-center"
+                     style="width:36px;height:36px;">
+                  <span class="small">{{ student.username|slice:":2"|upper }}</span>
+                </div>
+                <div class="d-flex flex-column">
+                  <span class="fw-medium">{{ student.username }}</span>
+                  {% if student.email %}
+                    <span class="text-muted small">{{ student.email }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+            <td class="text-end text-nowrap">
+              <a href="{% url 'coach_student_trades' student.pk %}" class="btn btn-primary btn-sm">
+                Voir ses trades
+              </a>
+              <a href="{% url 'stats' %}?student_id={{ student.pk }}" class="btn btn-outline-success btn-sm">
+                Voir ses stats
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="alert alert-info" role="alert">
+      Vous n’avez pas encore d’élèves.
+    </div>
+  {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function(){
+    const input = document.getElementById('studentSearch');
+    const table = document.getElementById('studentsTable');
+    if (!input || !table) return;
+
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+
+    function norm(s){ return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+
+    input.addEventListener('input', function(){
+      const q = norm(input.value);
+      rows.forEach(tr => {
+        const txt = norm(tr.textContent);
+        tr.style.display = txt.includes(q) ? '' : 'none';
+      });
+    });
+  })();
+</script>
 {% endblock %}
